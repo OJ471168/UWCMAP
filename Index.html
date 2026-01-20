@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Event Map</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- LAYOUT STYLES --- */
+        body { font-family: 'Inter', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; background: #f4f4f4; }
+        
+        /* SIDEBAR */
+        #sidebar { width: 320px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.05); z-index: 20; flex-shrink: 0; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid #eee; background: #fafafa; }
+        .sidebar-content { padding: 20px; overflow-y: auto; flex-grow: 1; }
+        
+        /* MAIN CONTENT AREA */
+        #main-content { flex-grow: 1; position: relative; height: 100%; display: flex; flex-direction: column; background: #f0f2f5; }
+
+        /* TOGGLE SWITCHES (View + Favorites) */
+        .view-toggle-container {
+            position: absolute; top: 20px; right: 20px; z-index: 1000;
+            background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex; padding: 4px; border: 1px solid #ddd; gap: 4px;
+        }
+        .toggle-btn {
+            padding: 8px 16px; cursor: pointer; border: none; background: transparent;
+            font-weight: 700; font-size: 13px; border-radius: 6px; color: #555;
+            display: flex; align-items: center; gap: 6px; transition: all 0.2s;
+        }
+        .toggle-btn.active { background: #2e1a5b; color: white; box-shadow: 0 2px 4px rgba(46, 26, 91, 0.3); }
+        .toggle-btn.fav-active { background: #e63946; color: white; box-shadow: 0 2px 4px rgba(230, 57, 70, 0.3); }
+        .toggle-btn:hover:not(.active):not(.fav-active) { background: #f0f0f0; }
+
+        /* MAP VIEW */
+        #map { width: 100%; flex-grow: 1; display: block; }
+
+        /* LIST VIEW COMPONENTS */
+        #list-header {
+            display: none; /* Hidden by default */
+            padding: 20px 30px 10px 30px;
+            background: #f0f2f5;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        #current-month-label {
+            margin: 0; font-size: 24px; font-weight: 800; color: #2e1a5b; text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        #list-footer {
+            display: none; /* Hidden by default */
+            padding: 15px 30px;
+            background: #fff;
+            border-top: 1px solid #ddd;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+        .nav-btn {
+            padding: 10px 20px;
+            background: white; border: 1px solid #ddd; border-radius: 6px;
+            font-weight: 600; color: #555; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .nav-btn:hover { background: #f8f9fa; border-color: #bbb; color: #333; }
+        
+        /* CARD VIEW CONTAINER */
+        #card-view { 
+            display: none; padding: 30px; overflow-y: auto; background: #f0f2f5; 
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; align-content: start;
+            flex-grow: 1; 
+        }
+        #card-view.active { display: grid; }
+
+        /* --- CARD DESIGN --- */
+        .event-card {
+            border-radius: 20px; 
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
+            display: flex; flex-direction: column; 
+            min-height: 400px;max-width: 300px;
+            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            color: white;
+        }
+        .event-card:hover { transform: translateY(-5px); box-shadow: 0 12px 25px rgba(0,0,0,0.25); }
+        
+        .card-image-wrapper { position: relative; height: 180px; width: 100%; }
+        .card-image {
+            height: 100%; width: 100%; background-color: #1a0f35;
+            background-size: cover; background-position: center;
+        }
+
+        /* CARD HEART BUTTON */
+        .card-heart-btn {
+            position: absolute; top: 10px; right: 10px;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 5; transition: all 0.2s;
+            font-size: 16px; color: rgba(255,255,255,0.7);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .card-heart-btn:hover { background: rgba(0,0,0,0.6); transform: scale(1.1); }
+        .card-heart-btn.liked { background: #e63946; color: white; border-color: #e63946; }
+
+        .date-badge {
+            position: absolute; top: 0; left: 0;
+            background: #111; color: white;
+            padding: 10px 12px;
+            border-bottom-right-radius: 20px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            line-height: 1; z-index: 2;
+            width: 50px; height: 60px;
+        }
+        .date-month { font-size: 10px; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+        .date-day { font-size: 24px; font-weight: 700; margin-bottom: 2px; }
+        .date-weekday { font-size: 10px; font-weight: 600; text-transform: uppercase; color: #ccc; }
+
+        .card-content { 
+            padding: 20px; 
+            display: flex; flex-direction: column; 
+            flex-grow: 1; text-align: center; 
+            align-items: center;
+        }
+
+        .card-category { 
+            font-size: 11px; text-transform: uppercase; letter-spacing: 1px; 
+            color: rgba(255, 255, 255, 0.7); margin-bottom: 8px; font-weight: 600;
+        }
+
+        .card-title { 
+            font-size: 20px; font-weight: 800; color: white; margin: 0 0 8px 0; 
+            line-height: 1.3;
+            display: -webkit-box; 
+            -webkit-line-clamp: 2; 
+            line-clamp: 2; 
+            -webkit-box-orient: vertical; 
+            overflow: hidden;
+        }
+
+        .card-organizer { display: flex; align-items: center; margin-bottom: 20px; }
+        .card-organizer-avatar {
+            width: 24px; height: 24px; border-radius: 50%; object-fit: cover; margin-right: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .card-org-name { font-size: 14px; color: #ddd; font-weight: 400; }
+
+        .card-pills { margin-top: auto; display: flex; flex-direction: column; gap: 8px; width: 100%; }
+        .info-pill {
+            background: rgba(255, 255, 255, 0.1); border-radius: 50px;
+            padding: 8px 16px; font-size: 13px; font-weight: 500; color: #fff;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .info-pill span { opacity: 0.9; }
+
+        /* --- FILTERS & LOCATION CONTROLS --- */
+        .location-box { background: #e7f5ff; padding: 15px; border-radius: 8px; border: 1px solid #b8daff; margin-bottom: 15px; }
+        .locate-btn { 
+            width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 6px; 
+            font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+            margin-bottom: 5px; transition: background 0.2s;
+        }
+        .locate-btn:hover { background: #0056b3; }
+        .locate-btn.active { background: #dc3545; } 
+        
+        .radius-controls { display: none; margin-top: 10px; border-top: 1px solid #b8daff; padding-top: 10px; }
+        .radius-controls.visible { display: block; }
+        .range-label { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: #0056b3; margin-bottom: 5px; }
+        input[type=range] { width: 100%; cursor: pointer; }
+
+        .accordion-item { border-bottom: 1px solid #eee; margin-bottom: 10px; }
+        .accordion-header { font-size: 0.95rem; font-weight: 700; color: #333; padding: 10px 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+        .accordion-header:hover { color: #007bff; }
+        .accordion-body { display: none; padding-bottom: 10px; }
+        .accordion-body.open { display: block; animation: slideDown 0.2s ease-out; }
+        .accordion-header.active .accordion-icon { transform: rotate(180deg); }
+        .accordion-icon { transition: transform 0.2s; }
+
+        .filter-actions { display: flex; gap: 10px; margin-bottom: 8px; font-size: 0.8rem; }
+        .filter-link { color: #007bff; cursor: pointer; text-decoration: none; font-weight: 600; }
+        .filter-link:hover { text-decoration: underline; }
+        .filter-link.clear { color: #dc3545; }
+
+        .filter-item { display: flex; align-items: center; padding: 10px 12px; cursor: pointer; border-radius: 8px; margin-bottom: 6px; background: white; border: 1px solid #eee; transition: all 0.2s ease; position: relative; }
+        .filter-item:hover { background: #f8f9fa; border-color: #ddd; transform: translateX(2px); }
+        .filter-item.selected { background: #e7f5ff; border-color: #007bff; color: #007bff; font-weight: 600; box-shadow: 0 2px 4px rgba(0,123,255,0.1); }
+        .filter-checkbox { display: none; }
+        .check-icon { display: none; margin-left: auto; font-size: 14px; }
+        .filter-item.selected .check-icon { display: block; }
+        .filter-avatar { width: 28px; height: 28px; border-radius: 50%; margin-right: 10px; object-fit: cover; background: #eee; border: 1px solid #ddd; }
+        .color-dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 10px; display: inline-block; border: 1px solid rgba(0,0,0,0.1); }
+        .filter-label { font-size: 13px; flex-grow: 1; }
+
+        .cat-group { margin-bottom: 8px; border: 1px solid #eee; border-radius: 6px; overflow: hidden; }
+        .cat-header { background: #f8f9fa; padding: 8px 10px; display: flex; align-items: center; font-size: 0.9em; font-weight: 600; color: #444; }
+        .cat-toggle { flex-grow: 1; cursor: pointer; margin-left: 8px; display: flex; align-items: center; justify-content: space-between; }
+        .cat-body { display: none; padding: 5px 10px 10px 10px; background: white; border-top: 1px solid #eee; }
+        .cat-body.open { display: block; }
+        
+        .continent-icon { width: 24px; height: 24px; margin-right: 10px; filter: grayscale(100%); transition: filter 0.2s; }
+        .cat-group:hover .continent-icon { filter: grayscale(0%); }
+        .country-flag { width: 20px; height: 15px; margin-right: 10px; object-fit: cover; border-radius: 2px; border: 1px solid #eee; }
+
+        input[type="text"] { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        .search-container { position: relative; width: 100%; margin-bottom: 15px; }
+        #suggestions-box { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 0 0 6px 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 100; max-height: 200px; overflow-y: auto; display: none; }
+        .suggestion-item { padding: 10px; font-size: 13px; cursor: pointer; color: #333; border-bottom: 1px solid #f0f0f0; }
+        .suggestion-item:hover { background: #f0f8ff; color: #007bff; }
+
+        /* PANEL DETAILS */
+        .panel-title { font-size: 22px; font-weight: 800; color: #333; margin-bottom: 10px; line-height: 1.2; }
+        .event-cover-img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; background: #eee; }
+        .badge-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+        .badge { font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 4px 8px; border-radius: 4px; color: #555; background: #e9ecef; }
+        
+        .organizer-row-panel { display: flex; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+        .organizer-avatar-panel { 
+            width: 24px; height: 24px; 
+            border-radius: 50%; object-fit: cover; margin-right: 10px; border: 1px solid #ddd; 
+        }
+        .organizer-info-panel { display: flex; flex-direction: column; }
+        .organizer-name-panel { font-weight: 700; color: #333; font-size: 13px; }
+        .organizer-label-panel { font-size: 9px; color: #888; text-transform: uppercase; margin-bottom: 1px; }
+
+        .meta-row { display: flex; margin-bottom: 12px; font-size: 14px; color: #555; align-items: flex-start; }
+        .meta-icon { margin-right: 12px; font-size: 16px; width: 20px; text-align: center; }
+        .btn-close { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; color: #999; z-index: 30; }
+        
+        .panel-actions { margin-top: 20px; display: flex; gap: 10px; }
+        .btn-action { flex-grow: 1; display: block; padding: 12px; background: #228be6; color: white; text-align: center; text-decoration: none; border-radius: 6px; font-weight: 700; border: none; cursor: pointer; }
+        .btn-action:hover { background: #1c7ed6; }
+        
+        /* PANEL SPECIFIC BUTTONS */
+        .btn-share, .btn-heart { background: #f1f3f5; color: #333; flex-grow: 0; min-width: 50px; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid transparent; }
+        .btn-share:hover, .btn-heart:hover { background: #e9ecef; }
+        .btn-heart.liked { background: #ffe3e3; border-color: #e63946; color: #e63946; }
+
+        /* INFO PANEL */
+        #info-panel { width: 0; background: white; border-left: 1px solid #ddd; overflow-y: auto; transition: width 0.3s ease; box-shadow: -2px 0 10px rgba(0,0,0,0.05); z-index: 20; position: relative; }
+        #info-panel.active { width: 360px; padding: 0; }
+        .panel-inner { padding: 25px; opacity: 0; transition: opacity 0.3s; }
+        #info-panel.active .panel-inner { opacity: 1; }
+
+        /* DATE PICKER CUSTOM STYLES */
+        .date-picker-container { position: relative; margin-bottom: 15px; }
+        .flatpickr-input { background-color: #fff !important; cursor: pointer; }
+        .clear-date { 
+            font-size: 11px; color: #dc3545; text-decoration: none; cursor: pointer; 
+            display: none; margin-top: 5px; font-weight: 600;
+        }
+        .clear-date:hover { text-decoration: underline; }
+
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <div class="sidebar-header"><h2 style="margin: 0; font-size: 1.4rem;">Global Events</h2></div>
+        <div class="sidebar-content">
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="🔍 Search event titles..." autocomplete="off">
+                <div id="suggestions-box"></div>
+            </div>
+
+            <div class="location-box">
+                <button class="locate-btn" id="locate-btn" onclick="toggleLocation()">
+                    <span>📍</span> <span id="locate-text">Find Events Near Me</span>
+                </button>
+                <div class="radius-controls" id="radius-controls">
+                    <div class="range-label"><span>Search Radius</span><span id="radius-val">100 km</span></div>
+                    <input type="range" id="radius-slider" min="10" max="500" value="100" step="10" oninput="updateRadius(this.value)">
+                </div>
+            </div>
+            
+            <label style="font-size: 0.85em; font-weight: bold; color: #777; display: block; margin-bottom: 5px;">DATE FILTER</label>
+            <div class="date-picker-container">
+                <input type="text" id="date-range-picker" placeholder="📆 Select Date or Range...">
+                <span class="clear-date" id="clear-date-btn" onclick="clearDateFilter()">× Clear Dates</span>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 15px;">
+            
+            <div id="location-list-filter" style="display: none;">
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion('acc-loc', this)">
+                        LOCATIONS <span class="accordion-icon">▼</span>
+                    </div>
+                    <div id="acc-loc" class="accordion-body">
+                        <div class="filter-actions">
+                            <span class="filter-link" onclick="toggleAll('loc-child-checkbox', true); toggleAll('loc-parent-checkbox', true);">Select All</span>
+                            <span class="filter-link clear" onclick="toggleAll('loc-child-checkbox', false); toggleAll('loc-parent-checkbox', false);">Clear All</span>
+                        </div>
+                        <div id="dynamic-locations-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion('acc-orgs', this)">
+                    ORGANIZERS <span class="accordion-icon">▼</span>
+                </div>
+                <div id="acc-orgs" class="accordion-body">
+                    <div class="filter-actions">
+                        <span class="filter-link" onclick="toggleAll('org-checkbox', true)">All</span>
+                        <span class="filter-link clear" onclick="toggleAll('org-checkbox', false)">Clear</span>
+                    </div>
+                    <div id="organizer-list-container"></div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion('acc-type', this)">EVENT TYPE <span class="accordion-icon">▼</span></div>
+                <div id="acc-type" class="accordion-body">
+                    <div class="filter-actions">
+                        <span class="filter-link" onclick="toggleAll('type-checkbox', true)">All</span>
+                        <span class="filter-link clear" onclick="toggleAll('type-checkbox', false)">Clear</span>
+                    </div>
+                    <label class="filter-item"><input type="checkbox" class="type-checkbox filter-checkbox" value="Workshops"><span class="filter-label">Workshops</span><span class="check-icon">✔</span></label>
+                    <label class="filter-item"><input type="checkbox" class="type-checkbox filter-checkbox" value="Courses"><span class="filter-label">Courses</span><span class="check-icon">✔</span></label>
+                    <label class="filter-item"><input type="checkbox" class="type-checkbox filter-checkbox" value="Retreats"><span class="filter-label">Retreats</span><span class="check-icon">✔</span></label>
+                    <label class="filter-item"><input type="checkbox" class="type-checkbox filter-checkbox" value="Trainings"><span class="filter-label">Trainings</span><span class="check-icon">✔</span></label>
+                    <label class="filter-item"><input type="checkbox" class="type-checkbox filter-checkbox" value="Conference"><span class="filter-label">Conference</span><span class="check-icon">✔</span></label>
+                    <label class="filter-item"><input type="checkbox" class="type-checkbox filter-checkbox" value="Community Gatherings"><span class="filter-label">Community Gatherings</span><span class="check-icon">✔</span></label>
+                </div>
+            </div>
+
+            <div class="accordion-item" style="border-bottom: none;">
+                <div class="accordion-header" onclick="toggleAccordion('acc-cats', this)">CATEGORIES <span class="accordion-icon">▼</span></div>
+                <div id="acc-cats" class="accordion-body">
+                    <div class="filter-actions" style="margin-bottom: 10px;">
+                        <span class="filter-link" onclick="toggleAll('child-checkbox', true); toggleAll('parent-checkbox', true);">Select All</span>
+                        <span class="filter-link clear" onclick="toggleAll('child-checkbox', false); toggleAll('parent-checkbox', false);">Clear All</span>
+                    </div>
+
+                    <div class="cat-group" style="border-left: 3px solid #2A81CB;">
+                        <div class="cat-header"><input type="checkbox" class="parent-checkbox filter-checkbox"><div class="cat-toggle" onclick="toggleSub(this)">3 Principles <span>▼</span></div></div>
+                        <div class="cat-body">
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="3p" value="Foundations"><span class="color-dot" style="background:#2A81CB;"></span><span class="filter-label">Foundations</span><span class="check-icon">✔</span></label>
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="3p" value="Key Concepts"><span class="color-dot" style="background:#2A81CB;"></span><span class="filter-label">Key Concepts</span><span class="check-icon">✔</span></label>
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="3p" value="Getting Started"><span class="color-dot" style="background:#2A81CB;"></span><span class="filter-label">Getting Started</span><span class="check-icon">✔</span></label>
+                        </div>
+                    </div>
+                    <div class="cat-group" style="border-left: 3px solid #2AAD27;">
+                        <div class="cat-header">
+                            <input type="checkbox" class="parent-checkbox filter-checkbox">
+                            <div class="cat-toggle" onclick="toggleSub(this)">Deep Listening <span>▼</span></div>
+                        </div>
+                        <div class="cat-body">
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="listening" value="Presence"><span class="color-dot" style="background:#2AAD27;"></span><span class="filter-label">Presence</span><span class="check-icon">✔</span></label>
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="listening" value="Understanding"><span class="color-dot" style="background:#2AAD27;"></span><span class="filter-label">Understanding</span><span class="check-icon">✔</span></label>
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="listening" value="Connection"><span class="color-dot" style="background:#2AAD27;"></span><span class="filter-label">Connection</span><span class="check-icon">✔</span></label>
+                        </div>
+                    </div>
+                    <div class="cat-group" style="border-left: 3px solid #CB8427;">
+                        <div class="cat-header"><input type="checkbox" class="parent-checkbox filter-checkbox"><div class="cat-toggle" onclick="toggleSub(this)">Communities <span>▼</span></div></div>
+                        <div class="cat-body">
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="communities" value="Community Support"><span class="color-dot" style="background:#CB8427;"></span><span class="filter-label">Community Support</span><span class="check-icon">✔</span></label>
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="communities" value="Collective Wellbeing"><span class="color-dot" style="background:#CB8427;"></span><span class="filter-label">Collective Wellbeing</span><span class="check-icon">✔</span></label>
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="communities" value="Local Impact"><span class="color-dot" style="background:#CB8427;"></span><span class="filter-label">Local Impact</span><span class="check-icon">✔</span></label>
+                        </div>
+                    </div>
+                    <div class="cat-group" style="border-left: 3px solid #CB2B3E;">
+                        <div class="cat-header">
+                            <input type="checkbox" class="parent-checkbox filter-checkbox">
+                            <div class="cat-toggle" onclick="toggleSub(this)">Business <span>▼</span></div>
+                        </div>
+                        <div class="cat-body">
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="business" value="Leadership"><span class="color-dot" style="background:#CB2B3E;"></span><span class="filter-label">Leadership</span><span class="check-icon">✔</span></label>
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="business" value="Workplace Wellbeing"><span class="color-dot" style="background:#CB2B3E;"></span><span class="filter-label">Workplace Wellbeing</span><span class="check-icon">✔</span></label>
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="business" value="Performance"><span class="color-dot" style="background:#CB2B3E;"></span><span class="filter-label">Performance</span><span class="check-icon">✔</span></label>
+                        </div>
+                    </div>
+                    <div class="cat-group" style="border-left: 3px solid #9C2BCB;">
+                        <div class="cat-header">
+                            <input type="checkbox" class="parent-checkbox filter-checkbox">
+                            <div class="cat-toggle" onclick="toggleSub(this)">Schools <span>▼</span></div>
+                        </div>
+                        <div class="cat-body">
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="schools" value="Students"><span class="color-dot" style="background:#9C2BCB;"></span><span class="filter-label">Students</span><span class="check-icon">✔</span></label>
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="schools" value="Educators"><span class="color-dot" style="background:#9C2BCB;"></span><span class="filter-label">Educators</span><span class="check-icon">✔</span></label>
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="schools" value="Learning Environments"><span class="color-dot" style="background:#9C2BCB;"></span><span class="filter-label">Learning Environments</span><span class="check-icon">✔</span></label>
+                        </div>
+                    </div>
+                    <div class="cat-group" style="border-left: 3px solid #CAC428;">
+                        <div class="cat-header">
+                            <input type="checkbox" class="parent-checkbox filter-checkbox">
+                            <div class="cat-toggle" onclick="toggleSub(this)">Corrections <span>▼</span></div>
+                        </div>
+                        <div class="cat-body">
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="corrections" value="Rehabilitation"><span class="color-dot" style="background:#CAC428;"></span><span class="filter-label">Rehabilitation</span><span class="check-icon">✔</span></label>
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="corrections" value="Staff Support"><span class="color-dot" style="background:#CAC428;"></span><span class="filter-label">Staff Support</span><span class="check-icon">✔</span></label>
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="corrections" value="Reintegration"><span class="color-dot" style="background:#CAC428;"></span><span class="filter-label">Reintegration</span><span class="check-icon">✔</span></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-content">
+        <div class="view-toggle-container">
+            <button class="toggle-btn" id="fav-toggle" onclick="toggleFavoritesMode()">❤️ Saved</button>
+            <button class="toggle-btn active" id="btn-map" onclick="switchView('map')">🗺️ Map</button>
+            <button class="toggle-btn" id="btn-list" onclick="switchView('cards')">📑 List</button>
+        </div>
+        
+        <div id="list-header">
+            <h2 id="current-month-label"></h2>
+        </div>
+
+        <div id="map"></div>
+        <div id="card-view"></div>
+        
+        <div id="list-footer">
+            <button class="nav-btn" onclick="changeMonth(-1)">‹ Previous Month</button>
+            <button class="nav-btn" onclick="changeMonth(1)">Next Month ›</button>
+        </div>
+    </div>
+
+    <div id="info-panel">
+        <button class="btn-close" onclick="closePanel()">×</button>
+        <div id="panel-content" class="panel-inner"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+    <script>
+        // --- CONFIG ---
+        const organizerPhotos = {
+            "Lori Carpenos": "https://vlrbeemaxxdqiczdxomd.supabase.co/storage/v1/object/public/events_images/Lori%20(1).jpg",
+            "Allan Flood": "https://vlrbeemaxxdqiczdxomd.supabase.co/storage/v1/object/public/events_images/Allan%20Flood.jpg",
+            "Stewart Iskowitz": "https://vlrbeemaxxdqiczdxomd.supabase.co/storage/v1/object/public/events_images/stewart.jpg",
+            "Dr. Pettit": "https://vlrbeemaxxdqiczdxomd.supabase.co/storage/v1/object/public/events_images/bill%20pettit.png",
+            "Chana Studley": "https://vlrbeemaxxdqiczdxomd.supabase.co/storage/v1/object/public/events_images/Chana%20Studley.png"
+        };
+        const defaultAvatar = "https://ui-avatars.com/api/?background=random&name=";
+        
+        const continentIcons = {
+            "europe": "https://pic.onlinewebfonts.com/thumbnails/icons_303482.svg",
+            "africa": "https://pic.onlinewebfonts.com/thumbnails/icons_465264.svg",
+            "north america": "https://pic.onlinewebfonts.com/thumbnails/icons_465277.svg",
+            "south america": "https://pic.onlinewebfonts.com/thumbnails/icons_465278.svg",
+            "asia": "https://pic.onlinewebfonts.com/thumbnails/icons_303501.svg",
+            "oceania": "https://pic.onlinewebfonts.com/thumbnails/icons_303484.svg"
+        };
+
+        const countryCodes = {
+            "United States": "us", "USA": "us",
+            "United Kingdom": "gb", "UK": "gb",
+            "Canada": "ca", "Australia": "au", "Germany": "de", "France": "fr", "Spain": "es", "Italy": "it", "Netherlands": "nl", "Brazil": "br", "India": "in", "China": "cn", "Japan": "jp", "South Africa": "za", "New Zealand": "nz", "Mexico": "mx", "Russia": "ru", "Sweden": "se", "Norway": "no", "Denmark": "dk", "Finland": "fi", "Switzerland": "ch", "Ireland": "ie", "Belgium": "be", "Austria": "at", "Portugal": "pt", "Greece": "gr", "Poland": "pl", "Czech Republic": "cz", "Hungary": "hu", "Turkey": "tr", "Israel": "il", "Egypt": "eg", "Thailand": "th", "Vietnam": "vn", "Indonesia": "id", "Malaysia": "my", "Singapore": "sg", "Philippines": "ph", "Argentina": "ar", "Chile": "cl", "Colombia": "co", "Peru": "pe", "Morocco": "ma"
+        };
+
+        const catColors = { '3 Principles': '#2A81CB', 'Deep Listening': '#2AAD27', 'Communities': '#CB8427', 'Business': '#CB2B3E', 'Schools': '#9C2BCB', 'Corrections': '#CAC428', 'Default': '#555' };
+
+        const createColorIcon = (colorUrl) => new L.Icon({ iconUrl: colorUrl, shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
+        const icons = {
+            blue: createColorIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png'),
+            green: createColorIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png'),
+            orange: createColorIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png'),
+            red: createColorIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png'),
+            violet: createColorIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png'),
+            gold: createColorIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png'),
+            grey: createColorIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png')
+        };
+        function getCategoryIcon(c) {
+            if(!c) return icons.grey; c = c.toLowerCase();
+            if (c.includes('principles')) return icons.blue;
+            if (c.includes('listening')) return icons.green;
+            if (c.includes('communities')) return icons.orange;
+            if (c.includes('business')) return icons.red;
+            if (c.includes('schools')) return icons.violet;
+            if (c.includes('corrections')) return icons.gold;
+            return icons.grey;
+        }
+        function getCatColor(c) {
+            if(!c) return catColors['Default'];
+            for(let key in catColors) { if(c.includes(key)) return catColors[key]; }
+            return catColors['Default'];
+        }
+
+        // --- GLOBAL STATE ---
+        let eventsData = [];
+        let currentView = 'map';
+        let userLocation = null;
+        let searchRadius = 100000;
+        let userMarker = null;
+        let radiusCircle = null;
+        let selectedDateRange = null; 
+        let fpInstance = null;
+        let currentListDate = new Date(); 
+        
+        // --- NEW: FAVORITES STATE ---
+        let savedEvents = JSON.parse(localStorage.getItem('saved_events') || '[]');
+        let showFavoritesOnly = false;
+
+        // --- LOCATION LOGIC ---
+        function toggleLocation() {
+            if(userLocation) {
+                userLocation = null;
+                document.getElementById('locate-text').innerText = "Find Events Near Me";
+                document.getElementById('locate-btn').classList.remove('active');
+                document.getElementById('radius-controls').classList.remove('visible');
+                if(userMarker) map.removeLayer(userMarker);
+                if(radiusCircle) map.removeLayer(radiusCircle);
+                map.setView([40.0, 0.0], 2);
+                updateUI();
+            } else {
+                document.getElementById('locate-text').innerText = "Locating...";
+                map.locate({setView: true, maxZoom: 8});
+            }
+        }
+
+        function updateRadius(val) {
+            searchRadius = val * 1000;
+            document.getElementById('radius-val').innerText = val + " km";
+            if(radiusCircle) radiusCircle.setRadius(searchRadius);
+            updateUI();
+        }
+
+        // --- UI LOGIC ---
+        function toggleAccordion(id, h) { document.getElementById(id).classList.toggle('open'); h.classList.toggle('active'); }
+        function toggleSub(t) { const b = t.parentElement.nextElementSibling; b.classList.toggle('open'); t.querySelector('span').style.transform = b.classList.contains('open') ? "rotate(180deg)" : "rotate(0deg)"; }
+        function toggleAll(className, state) {
+            document.querySelectorAll('.' + className).forEach(box => box.checked = state);
+            updateUI();
+        }
+        function updateVisuals() {
+            document.querySelectorAll('.filter-checkbox').forEach(box => {
+                const parent = box.closest('.filter-item') || box.closest('.cat-header');
+                if(parent && parent.classList.contains('filter-item')) {
+                    if(box.checked) parent.classList.add('selected');
+                    else parent.classList.remove('selected');
+                }
+            });
+        }
+
+        function switchView(view) {
+            currentView = view;
+            const mapDiv = document.getElementById('map');
+            const cardDiv = document.getElementById('card-view');
+            const btns = document.querySelectorAll('.toggle-btn');
+            const locFilter = document.getElementById('location-list-filter');
+            const listHeader = document.getElementById('list-header');
+            const listFooter = document.getElementById('list-footer');
+
+            document.getElementById('btn-map').classList.remove('active');
+            document.getElementById('btn-list').classList.remove('active');
+            
+            if(view === 'map') {
+                document.getElementById('btn-map').classList.add('active');
+                mapDiv.style.display = 'block';
+                cardDiv.classList.remove('active');
+                locFilter.style.display = 'none';
+                listHeader.style.display = 'none';
+                listFooter.style.display = 'none';
+                map.invalidateSize(); 
+            } else {
+                document.getElementById('btn-list').classList.add('active');
+                mapDiv.style.display = 'none';
+                cardDiv.classList.add('active');
+                locFilter.style.display = 'block';
+                listHeader.style.display = 'block';
+                // Only show footer if not in favorites mode
+                if(!showFavoritesOnly) listFooter.style.display = 'flex';
+                else listFooter.style.display = 'none';
+            }
+            updateUI();
+        }
+        
+        function changeMonth(step) {
+            currentListDate.setMonth(currentListDate.getMonth() + step);
+            updateUI();
+        }
+
+        // --- FAVORITES LOGIC ---
+        function toggleFavoritesMode() {
+            showFavoritesOnly = !showFavoritesOnly;
+            const btn = document.getElementById('fav-toggle');
+            if(showFavoritesOnly) btn.classList.add('fav-active');
+            else btn.classList.remove('fav-active');
+            
+            // Adjust List View footer visibility
+            if(currentView === 'cards') {
+                document.getElementById('list-footer').style.display = showFavoritesOnly ? 'none' : 'flex';
+            }
+            updateUI();
+        }
+
+        function toggleLike(e, id) {
+            e.stopPropagation(); // Prevent opening the panel
+            const index = savedEvents.indexOf(id);
+            if(index === -1) {
+                savedEvents.push(id);
+            } else {
+                savedEvents.splice(index, 1);
+            }
+            localStorage.setItem('saved_events', JSON.stringify(savedEvents));
+            updateUI(); // Updates Cards
+            
+            // UPDATE PANEL BUTTON IF OPEN (SYNC)
+            const panelHeart = document.getElementById('panel-heart-btn');
+            if(panelHeart && parseInt(panelHeart.dataset.id) === id) {
+                const isSaved = savedEvents.includes(id);
+                if(isSaved) {
+                    panelHeart.classList.add('liked');
+                    panelHeart.innerText = '❤️';
+                } else {
+                    panelHeart.classList.remove('liked');
+                    panelHeart.innerText = '🤍';
+                }
+            }
+        }
+
+        // --- SUPABASE & DATA ---
+        const SUPABASE_URL = 'https://vlrbeemaxxdqiczdxomd.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZscmJlZW1heHhkcWljemR4b21kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NzkxNDYsImV4cCI6MjA4NDE1NTE0Nn0.TVPeCb9pudVV2_OsjSeNU6fGCVOVxSx6mYUfZPg0QB0';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const map = L.map('map').setView([40.0, 0.0], 2); 
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO', maxZoom: 20 }).addTo(map);
+        const markers = L.markerClusterGroup({ maxClusterRadius: 40, zoomToBoundsOnClick: false });
+        markers.on('clusterclick', function (a) { map.fitBounds(a.layer.getBounds(), { padding: [50, 50] }); });
+
+        map.on('locationfound', function(e) {
+            userLocation = e.latlng;
+            document.getElementById('locate-text').innerText = "Clear Location";
+            document.getElementById('locate-btn').classList.add('active');
+            document.getElementById('radius-controls').classList.add('visible');
+            if(userMarker) map.removeLayer(userMarker);
+            if(radiusCircle) map.removeLayer(radiusCircle);
+            userMarker = L.marker(e.latlng).addTo(map).bindPopup("You are here").openPopup();
+            radiusCircle = L.circle(e.latlng, { radius: searchRadius, color: '#007bff', fillOpacity: 0.1 }).addTo(map);
+            updateUI();
+        });
+        map.on('locationerror', function(e) { alert("Location access denied."); toggleLocation(); });
+
+        async function fetchEvents() {
+            const { data, error } = await supabaseClient
+                .from('events')
+                .select('*')
+                .order('start_time', { ascending: true });
+            if (error) { console.error(error); alert("Error loading events."); }
+            else {
+                eventsData = data.map(item => ({
+                    id: item.id, // VITAL: Mapped ID
+                    title: item.title,
+                    image_url: item.image_url,
+                    start: item.start_time, end: item.end_time,
+                    locationType: item.location_type, link: item.link,
+                    city: item.city, 
+                    country: item.country, 
+                    continent: item.continent, 
+                    format: item.format,
+                    category: item.category, subcategory: item.subcategory,
+                    audience: item.audience, organizer: item.organizer,
+                    desc: item.description, lat: item.lat, lng: item.lng
+                }));
+                renderOrganizerFilter();
+                renderLocationFilter(); 
+                initDatePicker(); 
+                
+                // CHECK FOR URL PARAM TO OPEN SPECIFIC EVENT
+                const urlParams = new URLSearchParams(window.location.search);
+                const sharedId = urlParams.get('event');
+                if(sharedId) {
+                    const evt = eventsData.find(e => e.id == sharedId);
+                    if(evt) openPanel(evt);
+                }
+
+                updateUI();
+            }
+        }
+
+        // --- DYNAMIC LOCATION FILTER RENDER ---
+        function renderLocationFilter() {
+            const container = document.getElementById('dynamic-locations-container');
+            container.innerHTML = '';
+            const hierarchy = {};
+            eventsData.forEach(e => {
+                if(e.continent && e.country) {
+                    const c = e.continent.toLowerCase();
+                    if(!hierarchy[c]) hierarchy[c] = new Set();
+                    hierarchy[c].add(e.country);
+                }
+            });
+
+            for (const [continent, countriesSet] of Object.entries(hierarchy)) {
+                const countries = Array.from(countriesSet).sort();
+                const iconUrl = continentIcons[continent] || '';
+                let countryItems = countries.map(country => {
+                    const code = countryCodes[country] || 'xx'; 
+                    const flagUrl = `https://flagcdn.com/w20/${code}.png`;
+                    return `
+                        <label class="filter-item">
+                            <input type="checkbox" class="loc-child-checkbox filter-checkbox" data-continent="${continent}" value="${country}">
+                            <img src="${flagUrl}" class="country-flag" onerror="this.style.display='none'">
+                            <span class="filter-label">${country}</span>
+                            <span class="check-icon">✔</span>
+                        </label>
+                    `;
+                }).join('');
+
+                const groupHTML = `
+                    <div class="cat-group">
+                        <div class="cat-header">
+                            <input type="checkbox" class="loc-parent-checkbox filter-checkbox" data-continent="${continent}">
+                            <div class="cat-toggle" onclick="toggleSub(this)">
+                                <img src="${iconUrl}" class="continent-icon"> ${continent.toUpperCase()} <span>▼</span>
+                            </div>
+                        </div>
+                        <div class="cat-body">
+                            ${countryItems}
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += groupHTML;
+            }
+
+            container.querySelectorAll('.loc-parent-checkbox').forEach(parent => {
+                parent.addEventListener('change', function(e) {
+                    const body = e.target.parentElement.nextElementSibling;
+                    body.querySelectorAll('.loc-child-checkbox').forEach(c => c.checked = e.target.checked);
+                    updateUI();
+                });
+            });
+            container.querySelectorAll('.loc-child-checkbox').forEach(c => c.addEventListener('change', updateUI));
+        }
+
+        function initDatePicker() {
+            fpInstance = flatpickr("#date-range-picker", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                onChange: function(selectedDates, dateStr, instance) {
+                    selectedDateRange = selectedDates;
+                    const clearBtn = document.getElementById('clear-date-btn');
+                    if(selectedDates.length > 0) clearBtn.style.display = 'block';
+                    else clearBtn.style.display = 'none';
+                    updateUI();
+                }
+            });
+        }
+
+        function clearDateFilter() {
+            if(fpInstance) {
+                fpInstance.clear(); 
+                selectedDateRange = null; 
+                document.getElementById('clear-date-btn').style.display = 'none'; 
+                updateUI(); 
+            }
+        }
+
+        function renderOrganizerFilter() {
+            const container = document.getElementById('organizer-list-container');
+            container.innerHTML = ''; 
+            for (const [name, photoUrl] of Object.entries(organizerPhotos)) {
+                const label = document.createElement('label');
+                label.className = 'filter-item';
+                label.innerHTML = `
+                    <input type="checkbox" class="org-checkbox filter-checkbox" value="${name}" onchange="updateUI()">
+                    <img src="${photoUrl}" class="filter-avatar" onerror="this.src='${defaultAvatar + name}'">
+                    <span class="filter-label">${name}</span>
+                    <span class="check-icon">✔</span>
+                `;
+                container.appendChild(label);
+            }
+        }
+
+        function updateUI() {
+            updateVisuals(); 
+
+            // Update Label based on mode
+            const monthLabel = showFavoritesOnly ? "Your Saved Events" : currentListDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            document.getElementById('current-month-label').innerText = monthLabel;
+
+            const searchText = document.getElementById('search-input').value.toLowerCase();
+            const checkedSubcats = Array.from(document.querySelectorAll('.child-checkbox:checked')).map(b => b.value.toLowerCase());
+            const checkedTypes = Array.from(document.querySelectorAll('.type-checkbox:checked')).map(b => b.value.toLowerCase());
+            const checkedOrgs = Array.from(document.querySelectorAll('.org-checkbox:checked')).map(b => b.value.toLowerCase());
+            const checkedLocations = Array.from(document.querySelectorAll('.loc-child-checkbox:checked')).map(b => b.value);
+
+            markers.clearLayers();
+            const cardContainer = document.getElementById('card-view');
+            let cardsHTML = '';
+
+            eventsData.forEach((event, index) => {
+                const sub = event.subcategory ? event.subcategory.toLowerCase() : '';
+                const type = event.format ? event.format.toLowerCase() : '';
+                const org = event.organizer ? event.organizer.toLowerCase() : ''; 
+                
+                const catMatch = checkedSubcats.length === 0 || checkedSubcats.includes(sub);
+                const typeMatch = checkedTypes.length === 0 || checkedTypes.includes(type);
+                const orgMatch = checkedOrgs.length === 0 || checkedOrgs.includes(org);
+                const textMatch = (event.title && event.title.toLowerCase().includes(searchText)) || (event.city && event.city.toLowerCase().includes(searchText));
+                
+                // FAVORITES FILTER
+                let favMatch = true;
+                if(showFavoritesOnly) {
+                    favMatch = savedEvents.includes(event.id);
+                }
+
+                let locFilterMatch = true;
+                if(currentView === 'cards' && checkedLocations.length > 0) {
+                     locFilterMatch = checkedLocations.includes(event.country);
+                }
+
+                let locMatch = true;
+                if(userLocation) {
+                    const dist = map.distance([event.lat, event.lng], userLocation);
+                    if(dist > searchRadius) locMatch = false;
+                }
+
+                let dateMatch = true;
+                if(selectedDateRange && selectedDateRange.length > 0) {
+                    const eventDate = new Date(event.start).setHours(0,0,0,0);
+                    const startDate = selectedDateRange[0].setHours(0,0,0,0);
+                    if(selectedDateRange.length === 2) {
+                        const endDate = selectedDateRange[1].setHours(23,59,59,999);
+                        if(eventDate < startDate || eventDate > endDate) dateMatch = false;
+                    } else {
+                        if(eventDate !== startDate) dateMatch = false;
+                    }
+                }
+                
+                if (catMatch && typeMatch && orgMatch && dateMatch && textMatch && locMatch && locFilterMatch && favMatch) {
+                    
+                    // MAP LOGIC
+                    const marker = L.marker([event.lat, event.lng], { icon: getCategoryIcon(event.category) });
+                    marker.on('click', () => openPanel(event));
+                    markers.addLayer(marker);
+
+                    // LIST VIEW LOGIC
+                    const sDate = new Date(event.start);
+                    
+                    let listMonthMatch = false;
+                    if (showFavoritesOnly) {
+                        listMonthMatch = true; // Show all saved
+                    } else {
+                        if (sDate.getMonth() === currentListDate.getMonth() && sDate.getFullYear() === currentListDate.getFullYear()) {
+                            listMonthMatch = true;
+                        }
+                    }
+
+                    if(currentView === 'cards' && listMonthMatch) {
+                        const month = sDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+                        const day = sDate.toLocaleDateString('en-US', { day: 'numeric' });
+                        const weekday = sDate.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+                        const dateRange = `${sDate.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'})} - ${new Date(event.end).toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'})}`;
+                        const bgStyle = event.image_url ? `background-image: url('${event.image_url}');` : `background-color: #1a0f35; display:flex; align-items:center; justify-content:center;`;
+                        const catColor = getCatColor(event.category);
+                        const orgImg = organizerPhotos[event.organizer] || defaultAvatar + event.organizer;
+                        
+                        // Heart State
+                        const isSaved = savedEvents.includes(event.id);
+                        const heartClass = isSaved ? 'liked' : '';
+                        const heartIcon = isSaved ? '❤️' : '🤍';
+
+                        cardsHTML += `
+                            <div class="event-card" onclick="openPanelFromCard(${index})">
+                                <div class="card-image-wrapper">
+                                    <div class="card-image" style="${bgStyle}"></div>
+                                    <div class="card-heart-btn ${heartClass}" onclick="toggleLike(event, ${event.id})">${heartIcon}</div>
+                                    <div class="date-badge">
+                                        <span class="date-month">${month}</span>
+                                        <span class="date-day">${day}</span>
+                                        <span class="date-weekday">${weekday}</span>
+                                    </div>
+                                </div>
+                                <div class="card-content" style="background-color: ${catColor};">
+                                    <div class="card-category">${event.category}</div>
+                                    <h3 class="card-title">${event.title}</h3>
+                                    <div class="card-organizer">
+                                        <img src="${orgImg}" class="card-organizer-avatar">
+                                        <div class="card-org-name">${event.organizer}</div>
+                                    </div>
+                                    <div class="card-pills">
+                                        <div class="info-pill"><span>⏰</span> ${dateRange}</div>
+                                        <div class="info-pill"><span>📍</span> ${event.city}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+            });
+            
+            map.addLayer(markers);
+            if(cardsHTML === '') cardsHTML = `<div style="text-align:center; padding:40px; color:#666; width:100%; grid-column: 1/-1;">No events found.</div>`;
+            cardContainer.innerHTML = cardsHTML;
+        }
+
+        function openPanelFromCard(index) { openPanel(eventsData[index]); }
+
+        function shareEvent(event) {
+            const url = `${window.location.origin}${window.location.pathname}?event=${event.id}`;
+            const shareData = {
+                title: event.title,
+                text: `Check out this event: ${event.title}`,
+                url: url
+            };
+
+            if (navigator.share) {
+                navigator.share(shareData).catch(console.error);
+            } else {
+                navigator.clipboard.writeText(url).then(() => {
+                    alert("Link copied to clipboard!");
+                });
+            }
+        }
+
+        function openPanel(event) {
+            const panel = document.getElementById('info-panel');
+            const content = document.getElementById('panel-content');
+            const sDate = new Date(event.start);
+            const eDate = new Date(event.end);
+            const dateStr = sDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            const timeStr = `${sDate.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'})} - ${eDate.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'})}`;
+            let linkBtn = event.link ? `<button onclick="window.open('${event.link}', '_blank')" class="btn-action">Join / Details</button>` : '';
+            let imgHTML = event.image_url ? `<img src="${event.image_url}" class="event-cover-img" alt="${event.title}">` : `<div class="event-cover-img" style="display:flex;align-items:center;justify-content:center;color:#999;font-size:30px;">📅</div>`;
+            let avatarUrl = organizerPhotos[event.organizer] || defaultAvatar + event.organizer;
+            let catColor = getCatColor(event.category);
+            
+            // HEART STATE
+            const isSaved = savedEvents.includes(event.id);
+            const heartClass = isSaved ? 'liked' : '';
+            const heartIcon = isSaved ? '❤️' : '🤍';
+
+            content.innerHTML = `
+                ${imgHTML}
+                <div class="panel-title">${event.title}</div>
+                <div class="badge-row">
+                    <span class="badge" style="background:${catColor}20; color:${catColor};">${event.category}</span>
+                    <span class="badge">${event.format}</span>
+                    <span class="badge">${event.locationType}</span>
+                </div>
+                <div class="organizer-row-panel">
+                    <img src="${avatarUrl}" class="organizer-avatar-panel">
+                    <div class="organizer-info-panel">
+                        <span class="organizer-label-panel">Hosted By</span>
+                        <span class="organizer-name-panel">${event.organizer}</span>
+                    </div>
+                </div>
+                <div class="meta-row"><div class="meta-icon">📅</div> <strong>${dateStr}</strong></div>
+                <div class="meta-row"><div class="meta-icon">⏰</div> ${timeStr}</div>
+                <div class="meta-row"><div class="meta-icon">📍</div> ${event.city}</div>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+                <div style="line-height: 1.6; color: #444;">${event.desc}</div>
+                
+                <div class="panel-actions">
+                    <button class="btn-action btn-share" onclick="shareEvent({title:'${event.title.replace(/'/g, "\\'")}', id:${event.id}})">🔗</button>
+                    <button id="panel-heart-btn" data-id="${event.id}" class="btn-action btn-heart ${heartClass}" onclick="toggleLike(event, ${event.id})">${heartIcon}</button>
+                    ${linkBtn}
+                </div>
+            `;
+            panel.classList.add('active');
+            if(currentView === 'map') {
+                const currentZoom = map.getZoom();
+                const targetZoom = Math.max(currentZoom, 15);
+                map.flyTo([event.lat, event.lng], targetZoom);
+            }
+        }
+
+        function closePanel() { document.getElementById('info-panel').classList.remove('active'); }
+
+        const searchInput = document.getElementById('search-input');
+        const suggestBox = document.getElementById('suggestions-box');
+        searchInput.addEventListener('input', function() {
+            const val = this.value.toLowerCase();
+            if (val.length < 1) { suggestBox.style.display = 'none'; updateUI(); return; }
+            const matches = eventsData.filter(e => e.title && e.title.toLowerCase().includes(val)).map(e => e.title);
+            const uniqueMatches = [...new Set(matches)].slice(0, 5);
+            if (uniqueMatches.length > 0) {
+                suggestBox.innerHTML = uniqueMatches.map(title => `<div class="suggestion-item" onclick="selectSuggestion('${title.replace(/'/g, "\\'")}')">${title}</div>`).join('');
+                suggestBox.style.display = 'block';
+            } else { suggestBox.style.display = 'none'; }
+            updateUI();
+        });
+        function selectSuggestion(title) { searchInput.value = title; suggestBox.style.display = 'none'; updateUI(); }
+        document.addEventListener('click', function(e) { if (!searchInput.contains(e.target) && !suggestBox.contains(e.target)) { suggestBox.style.display = 'none'; } });
+
+        document.querySelectorAll('.parent-checkbox').forEach(parent => {
+            parent.addEventListener('change', function(e) {
+                const body = e.target.parentElement.nextElementSibling;
+                body.querySelectorAll('.child-checkbox').forEach(c => c.checked = e.target.checked);
+                updateUI();
+            });
+        });
+        document.querySelectorAll('.child-checkbox, .type-checkbox').forEach(c => c.addEventListener('change', updateUI));
+        
+        fetchEvents();
+    </script>
+</body>
+</html>
