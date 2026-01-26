@@ -1305,7 +1305,7 @@
             const eDate = new Date(event.end);
             const dateStr = sDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
             const timeStr = `${sDate.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'})} - ${eDate.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'})}`;
-            let linkBtn = event.link ? `<button onclick="window.open('${event.link}', '_blank')" class="btn-action">Join / Details</button>` : '';
+            let linkBtn = event.link ? `<button onclick="window.open('${event.link}', '_blank')" class="btn-action"> More Details</button>` : '';
             let imgHTML = event.image_url ? `<img src="${event.image_url}" class="event-cover-img" alt="${event.title}">` : `<div class="event-cover-img" style="display:flex;align-items:center;justify-content:center;color:#999;font-size:30px;">📅</div>`;
             let avatarUrl = organizerPhotos[event.organizer] || defaultAvatar + event.organizer;
             let catColor = getCatColor(event.category);
@@ -1386,3 +1386,4 @@
     </script>
 </body>
 </html>
+
