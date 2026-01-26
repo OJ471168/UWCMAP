@@ -34,15 +34,15 @@
             transition: all 0.3s ease;
         }
 
-        /* TOGGLE ROW (Split Left/Right) */
+        /* TOGGLE ROW */
         .toggle-row {
             display: flex;
-            justify-content: space-between; /* Pushes Help left, Controls right */
+            justify-content: space-between; 
             align-items: center;
             padding: 10px 20px;
         }
 
-        /* TOGGLE SWITCHES GROUP */
+        /* TOGGLE SWITCHES */
         .view-toggle-container {
             background: #f8f9fa; border-radius: 8px; 
             display: flex; padding: 4px; border: 1px solid #eee; gap: 4px;
@@ -442,7 +442,7 @@
             
             <div class="help-section">
                 <h4>🔎 Filtering</h4>
-                <p>Use the sidebar to filter by <b>Category</b>, <b>Organizer</b>, or <b>Date</b>. In List View, use the top bar to filter by <b>Location</b> (Continent & Country).</p>
+                <p>Use the sidebar to filter by <b>Category</b>, <b>Facilitator</b>, or <b>Date</b>. In List View, use the top bar to filter by <b>Location</b> (Continent & Country).</p>
             </div>
             <button class="btn-action" onclick="toggleHelp()">Got it!</button>
         </div>
@@ -488,7 +488,7 @@
             
             <div class="accordion-item">
                 <div class="accordion-header" onclick="toggleAccordion('acc-orgs', this)">
-                    ORGANIZERS <span class="accordion-icon">▼</span>
+                    FACILITATORS <span class="accordion-icon">▼</span>
                 </div>
                 <div id="acc-orgs" class="accordion-body">
                     <div class="filter-actions">
@@ -767,7 +767,7 @@
 
         // --- RESET MAP LOGIC ---
         function resetMapView() {
-            map.setView([40.0, 0.0], 2);
+            map.flyTo([40.0, 0.0], 2, { duration: 1.5 });
             if(currentView !== 'map') {
                 switchView('map');
             }
@@ -823,6 +823,9 @@
             document.getElementById('btn-map').classList.remove('active');
             document.getElementById('btn-list').classList.remove('active');
             
+            // AUTO CLOSE PANEL
+            closePanel();
+
             if(view === 'map') {
                 // RESET LOCATION FILTER LOGIC HERE
                 selectedContinent = null;
@@ -837,7 +840,10 @@
                 listHeader.classList.remove('visible');
                 listFooter.classList.remove('visible');
                 map.invalidateSize(); 
-                if(map.getZoom() > 3) resetBtn.classList.add('visible');
+                
+                // INSTANTLY RESET MAP VIEW (No Animation for cleaner switch)
+                map.setView([40.0, 0.0], 2);
+                resetBtn.classList.remove('visible'); 
             } else {
                 document.getElementById('btn-list').classList.add('active');
                 mapDiv.style.display = 'none';
@@ -1327,7 +1333,7 @@
                 <div class="organizer-row-panel">
                     <img src="${avatarUrl}" class="organizer-avatar-panel">
                     <div class="organizer-info-panel">
-                        <span class="organizer-label-panel">Hosted By</span>
+                        <span class="organizer-label-panel">Facilitated By</span>
                         <span class="organizer-name-panel">${event.organizer}</span>
                     </div>
                 </div>
@@ -1345,7 +1351,7 @@
             if(currentView === 'map') {
                 const currentZoom = map.getZoom();
                 const targetZoom = Math.max(currentZoom, 15);
-                map.flyTo([event.lat, event.lng], targetZoom);
+                map.flyTo([event.lat, event.lng], targetZoom, { duration: 1.5 });
             }
         }
 
