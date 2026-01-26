@@ -9,8 +9,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
     
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
     <style>
@@ -20,65 +18,167 @@
         /* SIDEBAR */
         #sidebar { width: 320px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.05); z-index: 20; flex-shrink: 0; }
         .sidebar-header { padding: 20px; border-bottom: 1px solid #eee; background: #fafafa; }
-        .sidebar-content { padding: 20px; overflow-y: auto; flex-grow: 1; }
+        .sidebar-content { padding: 20px; overflow-y: auto; flex-grow: 1; scroll-behavior: smooth; }
         
         /* MAIN CONTENT AREA */
         #main-content { flex-grow: 1; position: relative; height: 100%; display: flex; flex-direction: column; background: #f0f2f5; }
 
-        /* TOGGLE SWITCHES (View + Favorites) */
+        /* --- HEADER CONTAINER --- */
+        #header-container {
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        /* TOGGLE ROW (Split Left/Right) */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between; /* Pushes Help left, Controls right */
+            align-items: center;
+            padding: 10px 20px;
+        }
+
+        /* TOGGLE SWITCHES GROUP */
         .view-toggle-container {
-            position: absolute; top: 20px; right: 20px; z-index: 1000;
-            background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            display: flex; padding: 4px; border: 1px solid #ddd; gap: 4px;
+            background: #f8f9fa; border-radius: 8px; 
+            display: flex; padding: 4px; border: 1px solid #eee; gap: 4px;
         }
         .toggle-btn {
             padding: 8px 16px; cursor: pointer; border: none; background: transparent;
             font-weight: 700; font-size: 13px; border-radius: 6px; color: #555;
-            display: flex; align-items: center; gap: 6px; transition: all 0.2s;
+            display: flex; align-items: center; gap: 6px; 
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
-        .toggle-btn.active { background: #2e1a5b; color: white; box-shadow: 0 2px 4px rgba(46, 26, 91, 0.3); }
-        .toggle-btn.fav-active { background: #e63946; color: white; box-shadow: 0 2px 4px rgba(230, 57, 70, 0.3); }
-        .toggle-btn:hover:not(.active):not(.fav-active) { background: #f0f0f0; }
+        .toggle-btn.active { background: #2e1a5b; color: white; box-shadow: 0 2px 4px rgba(46, 26, 91, 0.3); transform: scale(1.02); }
+        .toggle-btn.fav-active { background: #e63946; color: white; box-shadow: 0 2px 4px rgba(230, 57, 70, 0.3); transform: scale(1.02); }
+        .toggle-btn:hover:not(.active):not(.fav-active) { background: #e9ecef; }
+
+        /* HELP BUTTON (Standalone) */
+        .btn-help-standalone {
+            padding: 8px 12px; background: white; border: 1px solid #ddd; border-radius: 8px;
+            font-weight: 700; color: #555; cursor: pointer; font-size: 13px;
+            display: flex; align-items: center; gap: 6px;
+            transition: all 0.2s ease;
+        }
+        .btn-help-standalone:hover { background: #f0f8ff; border-color: #007bff; color: #007bff; }
+
+        /* --- TOP LOCATION FILTER (SMOOTH SLIDE) --- */
+        #top-location-filter {
+            background: #fff;
+            text-align: center;
+            overflow: hidden;
+            max-height: 0; opacity: 0; padding: 0 20px; border-top: 0px solid transparent;
+            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        #top-location-filter.visible {
+            max-height: 300px; opacity: 1; padding: 15px 20px; border-top: 1px solid #eee;
+        }
+        
+        /* LOC FILTER - CONTINENT LEVEL */
+        .loc-grid-continents {
+            display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;
+        }
+        .loc-pill {
+            padding: 8px 16px; border-radius: 50px; border: 1px solid #eee; background: #fff;
+            cursor: pointer; font-size: 13px; font-weight: 600; color: #555;
+            display: flex; align-items: center; gap: 8px; 
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .loc-pill:hover { background: #f8f9fa; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .loc-pill.active { background: #2e1a5b; color: white; border-color: #2e1a5b; transform: scale(1.05); }
+        .loc-icon { width: 18px; height: 18px; filter: grayscale(100%); transition: filter 0.2s; }
+        .loc-pill.active .loc-icon, .loc-pill:hover .loc-icon { filter: grayscale(0%); }
+
+        /* LOC FILTER - COUNTRY LEVEL */
+        .loc-country-level { display: none; flex-direction: column; align-items: center; gap: 10px; animation: fadeIn 0.3s ease-out; }
+        .loc-back-btn {
+            font-size: 12px; color: #007bff; cursor: pointer; font-weight: 600; margin-bottom: 5px;
+            display: flex; align-items: center; gap: 5px; transition: color 0.2s;
+        }
+        .loc-back-btn:hover { text-decoration: underline; color: #0056b3; }
+        .loc-country-list { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+        .country-pill {
+            padding: 6px 12px; border-radius: 6px; border: 1px solid #eee; background: #fff;
+            cursor: pointer; font-size: 12px; font-weight: 500; color: #333;
+            display: flex; align-items: center; gap: 6px;
+            transition: all 0.2s ease;
+        }
+        .country-pill:hover { background: #f0f8ff; border-color: #b8daff; transform: translateY(-1px); }
+        .country-pill.active { background: #e7f5ff; border-color: #007bff; color: #007bff; font-weight: 700; }
+        .mini-flag { width: 16px; height: 12px; border-radius: 2px; object-fit: cover; }
+
+        /* FLOATING RESET BUTTON */
+        #map-reset-btn {
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(20px);
+            z-index: 900;
+            background: white; color: #333;
+            padding: 12px 24px; border-radius: 50px;
+            font-weight: 700; font-size: 14px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            cursor: pointer; 
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex; align-items: center; gap: 8px;
+            opacity: 0; pointer-events: none;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        #map-reset-btn.visible {
+            opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0);
+        }
+        #map-reset-btn:hover {
+            background: #2e1a5b; color: white; box-shadow: 0 8px 25px rgba(46, 26, 91, 0.4); transform: translateX(-50%) scale(1.05);
+        }
 
         /* MAP VIEW */
-        #map { width: 100%; flex-grow: 1; display: block; }
+        #map { width: 100%; flex-grow: 1; display: block; opacity: 1; transition: opacity 0.3s ease; }
 
         /* LIST VIEW COMPONENTS */
         #list-header {
-            display: none; /* Hidden by default */
-            padding: 20px 30px 10px 30px;
-            background: #f0f2f5;
-            text-align: center;
-            flex-shrink: 0;
+            max-height: 0; opacity: 0; overflow: hidden; padding: 0 30px;
+            background: #f0f2f5; text-align: center; flex-shrink: 0;
+            transition: all 0.4s ease;
         }
+        #list-header.visible { max-height: 60px; opacity: 1; padding: 10px 30px; }
         #current-month-label {
-            margin: 0; font-size: 24px; font-weight: 800; color: #2e1a5b; text-transform: uppercase; letter-spacing: 1px;
+            margin: 0; font-size: 18px; font-weight: 800; color: #2e1a5b; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7;
         }
 
+        /* --- LIST FOOTER (SMOOTH SLIDE) --- */
         #list-footer {
-            display: none; /* Hidden by default */
-            padding: 15px 30px;
             background: #fff;
             border-top: 1px solid #ddd;
             justify-content: space-between;
             align-items: center;
             flex-shrink: 0;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
             z-index: 10;
+            display: flex; 
+            max-height: 0; opacity: 0; padding: 0 30px;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
+        #list-footer.visible {
+            max-height: 80px; opacity: 1; padding: 15px 30px;
+        }
+        
         .nav-btn {
             padding: 10px 20px;
             background: white; border: 1px solid #ddd; border-radius: 6px;
-            font-weight: 600; color: #555; cursor: pointer; transition: all 0.2s;
+            font-weight: 600; color: #555; cursor: pointer; 
+            transition: all 0.2s ease;
             display: flex; align-items: center; gap: 8px;
         }
-        .nav-btn:hover { background: #f8f9fa; border-color: #bbb; color: #333; }
+        .nav-btn:hover { background: #f8f9fa; border-color: #bbb; color: #333; transform: translateX(2px); }
         
         /* CARD VIEW CONTAINER */
         #card-view { 
             display: none; padding: 30px; overflow-y: auto; background: #f0f2f5; 
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; align-content: start;
             flex-grow: 1; 
+            animation: fadeIn 0.4s ease-out;
         }
         #card-view.active { display: grid; }
 
@@ -89,17 +189,20 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
             display: flex; flex-direction: column; 
             min-height: 400px;max-width: 300px;
-            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer; 
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease;
             position: relative;
             color: white;
         }
-        .event-card:hover { transform: translateY(-5px); box-shadow: 0 12px 25px rgba(0,0,0,0.25); }
+        .event-card:hover { transform: translateY(-8px); box-shadow: 0 15px 30px rgba(0,0,0,0.2); }
         
         .card-image-wrapper { position: relative; height: 180px; width: 100%; }
         .card-image {
             height: 100%; width: 100%; background-color: #1a0f35;
             background-size: cover; background-position: center;
+            transition: transform 0.5s ease;
         }
+        .event-card:hover .card-image { transform: scale(1.05); }
 
         /* CARD HEART BUTTON */
         .card-heart-btn {
@@ -107,12 +210,13 @@
             background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
             width: 32px; height: 32px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; z-index: 5; transition: all 0.2s;
+            cursor: pointer; z-index: 5; 
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             font-size: 16px; color: rgba(255,255,255,0.7);
             border: 1px solid rgba(255,255,255,0.2);
         }
-        .card-heart-btn:hover { background: rgba(0,0,0,0.6); transform: scale(1.1); }
-        .card-heart-btn.liked { background: #e63946; color: white; border-color: #e63946; }
+        .card-heart-btn:hover { background: rgba(0,0,0,0.6); transform: scale(1.15); }
+        .card-heart-btn.liked { background: #e63946; color: white; border-color: #e63946; transform: scale(1.1); }
 
         .date-badge {
             position: absolute; top: 0; left: 0;
@@ -133,6 +237,8 @@
             display: flex; flex-direction: column; 
             flex-grow: 1; text-align: center; 
             align-items: center;
+            background-color: #555; /* Default fallback */
+            z-index: 1; position: relative;
         }
 
         .card-category { 
@@ -175,26 +281,34 @@
         .locate-btn:hover { background: #0056b3; }
         .locate-btn.active { background: #dc3545; } 
         
-        .radius-controls { display: none; margin-top: 10px; border-top: 1px solid #b8daff; padding-top: 10px; }
+        .radius-controls { display: none; margin-top: 10px; border-top: 1px solid #b8daff; padding-top: 10px; animation: slideDownFade 0.3s ease; }
         .radius-controls.visible { display: block; }
         .range-label { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: #0056b3; margin-bottom: 5px; }
         input[type=range] { width: 100%; cursor: pointer; }
 
+        /* --- SMOOTH ACCORDIONS --- */
         .accordion-item { border-bottom: 1px solid #eee; margin-bottom: 10px; }
-        .accordion-header { font-size: 0.95rem; font-weight: 700; color: #333; padding: 10px 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+        .accordion-header { font-size: 0.95rem; font-weight: 700; color: #333; padding: 10px 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; transition: color 0.2s; }
         .accordion-header:hover { color: #007bff; }
-        .accordion-body { display: none; padding-bottom: 10px; }
-        .accordion-body.open { display: block; animation: slideDown 0.2s ease-out; }
+        
+        .accordion-body { 
+            max-height: 0; opacity: 0; overflow: hidden; 
+            transition: max-height 0.4s cubic-bezier(0, 1, 0, 1), opacity 0.4s ease;
+        }
+        .accordion-body.open { 
+            max-height: 1000px; opacity: 1; padding-bottom: 10px; 
+        }
+        
         .accordion-header.active .accordion-icon { transform: rotate(180deg); }
-        .accordion-icon { transition: transform 0.2s; }
+        .accordion-icon { transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
         .filter-actions { display: flex; gap: 10px; margin-bottom: 8px; font-size: 0.8rem; }
-        .filter-link { color: #007bff; cursor: pointer; text-decoration: none; font-weight: 600; }
-        .filter-link:hover { text-decoration: underline; }
+        .filter-link { color: #007bff; cursor: pointer; text-decoration: none; font-weight: 600; transition: color 0.2s; }
+        .filter-link:hover { text-decoration: underline; color: #0056b3; }
         .filter-link.clear { color: #dc3545; }
 
         .filter-item { display: flex; align-items: center; padding: 10px 12px; cursor: pointer; border-radius: 8px; margin-bottom: 6px; background: white; border: 1px solid #eee; transition: all 0.2s ease; position: relative; }
-        .filter-item:hover { background: #f8f9fa; border-color: #ddd; transform: translateX(2px); }
+        .filter-item:hover { background: #f8f9fa; border-color: #ddd; transform: translateX(3px); }
         .filter-item.selected { background: #e7f5ff; border-color: #007bff; color: #007bff; font-weight: 600; box-shadow: 0 2px 4px rgba(0,123,255,0.1); }
         .filter-checkbox { display: none; }
         .check-icon { display: none; margin-left: auto; font-size: 14px; }
@@ -206,22 +320,41 @@
         .cat-group { margin-bottom: 8px; border: 1px solid #eee; border-radius: 6px; overflow: hidden; }
         .cat-header { background: #f8f9fa; padding: 8px 10px; display: flex; align-items: center; font-size: 0.9em; font-weight: 600; color: #444; }
         .cat-toggle { flex-grow: 1; cursor: pointer; margin-left: 8px; display: flex; align-items: center; justify-content: space-between; }
-        .cat-body { display: none; padding: 5px 10px 10px 10px; background: white; border-top: 1px solid #eee; }
-        .cat-body.open { display: block; }
         
-        .continent-icon { width: 24px; height: 24px; margin-right: 10px; filter: grayscale(100%); transition: filter 0.2s; }
-        .cat-group:hover .continent-icon { filter: grayscale(0%); }
-        .country-flag { width: 20px; height: 15px; margin-right: 10px; object-fit: cover; border-radius: 2px; border: 1px solid #eee; }
-
-        input[type="text"] { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        .cat-body { 
+            max-height: 0; opacity: 0; overflow: hidden; 
+            padding: 0 10px; background: white; border-top: 1px solid #eee;
+            transition: all 0.3s ease;
+        }
+        .cat-body.open { 
+            max-height: 500px; opacity: 1; padding: 5px 10px 10px 10px; 
+        }
+        
+        input[type="text"] { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; transition: border 0.2s; }
+        input[type="text"]:focus { border-color: #007bff; outline: none; }
+        
         .search-container { position: relative; width: 100%; margin-bottom: 15px; }
-        #suggestions-box { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 0 0 6px 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 100; max-height: 200px; overflow-y: auto; display: none; }
-        .suggestion-item { padding: 10px; font-size: 13px; cursor: pointer; color: #333; border-bottom: 1px solid #f0f0f0; }
+        #suggestions-box { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 0 0 6px 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 100; max-height: 200px; overflow-y: auto; display: none; animation: fadeIn 0.2s ease; }
+        .suggestion-item { padding: 10px; font-size: 13px; cursor: pointer; color: #333; border-bottom: 1px solid #f0f0f0; transition: background 0.2s; }
         .suggestion-item:hover { background: #f0f8ff; color: #007bff; }
 
-        /* PANEL DETAILS */
-        .panel-title { font-size: 22px; font-weight: 800; color: #333; margin-bottom: 10px; line-height: 1.2; }
+        /* PANEL DETAILS (NEW HEADER) */
+        .panel-title { font-size: 20px; font-weight: 800; color: #333; line-height: 1.3; margin: 0; flex-grow: 1; }
         .event-cover-img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; background: #eee; }
+        
+        /* HEADER ACTION ROW (TITLE + BUTTONS) */
+        .panel-header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; gap: 15px; }
+        .panel-top-buttons { display: flex; gap: 8px; flex-shrink: 0; }
+        
+        .btn-icon-circle {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: #2e1a5b; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border: 1px solid transparent; font-size: 16px; color: white;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .btn-icon-circle:hover { background: #1e113a; transform: scale(1.1); }
+        .btn-icon-circle.liked { background: #e63946; color: white; border-color: #e63946; }
+
         .badge-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
         .badge { font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 4px 8px; border-radius: 4px; color: #555; background: #e9ecef; }
         
@@ -236,36 +369,84 @@
 
         .meta-row { display: flex; margin-bottom: 12px; font-size: 14px; color: #555; align-items: flex-start; }
         .meta-icon { margin-right: 12px; font-size: 16px; width: 20px; text-align: center; }
-        .btn-close { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; color: #999; z-index: 30; }
+        .btn-close { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; color: #999; z-index: 30; transition: transform 0.2s; }
+        .btn-close:hover { transform: rotate(90deg); color: #333; }
         
-        .panel-actions { margin-top: 20px; display: flex; gap: 10px; }
-        .btn-action { flex-grow: 1; display: block; padding: 12px; background: #228be6; color: white; text-align: center; text-decoration: none; border-radius: 6px; font-weight: 700; border: none; cursor: pointer; }
+        .panel-actions { margin-top: 20px; }
+        .btn-action { width: 100%; display: block; padding: 12px; background: #228be6; color: white; text-align: center; text-decoration: none; border-radius: 6px; font-weight: 700; border: none; cursor: pointer; transition: background 0.2s; }
         .btn-action:hover { background: #1c7ed6; }
         
-        /* PANEL SPECIFIC BUTTONS */
-        .btn-share, .btn-heart { background: #f1f3f5; color: #333; flex-grow: 0; min-width: 50px; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid transparent; }
-        .btn-share:hover, .btn-heart:hover { background: #e9ecef; }
-        .btn-heart.liked { background: #ffe3e3; border-color: #e63946; color: #e63946; }
-
         /* INFO PANEL */
-        #info-panel { width: 0; background: white; border-left: 1px solid #ddd; overflow-y: auto; transition: width 0.3s ease; box-shadow: -2px 0 10px rgba(0,0,0,0.05); z-index: 20; position: relative; }
-        #info-panel.active { width: 360px; padding: 0; }
-        .panel-inner { padding: 25px; opacity: 0; transition: opacity 0.3s; }
+        #info-panel { width: 0; background: white; border-left: 1px solid #ddd; overflow-y: auto; transition: width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: -2px 0 10px rgba(0,0,0,0.05); z-index: 20; position: relative; }
+        #info-panel.active { width: 440px; padding: 0; }
+        .panel-inner { padding: 25px; opacity: 0; transition: opacity 0.3s 0.1s; } 
         #info-panel.active .panel-inner { opacity: 1; }
-
-        /* DATE PICKER CUSTOM STYLES */
-        .date-picker-container { position: relative; margin-bottom: 15px; }
-        .flatpickr-input { background-color: #fff !important; cursor: pointer; }
-        .clear-date { 
-            font-size: 11px; color: #dc3545; text-decoration: none; cursor: pointer; 
-            display: none; margin-top: 5px; font-weight: 600;
+        
+        /* HELP MODAL */
+        #help-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);
+            z-index: 2000; display: none; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s ease;
         }
-        .clear-date:hover { text-decoration: underline; }
+        #help-modal.visible { display: flex; opacity: 1; }
+        .help-content {
+            background: white; width: 90%; max-width: 500px; border-radius: 12px;
+            padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            position: relative; transform: translateY(20px); transition: transform 0.3s ease;
+        }
+        #help-modal.visible .help-content { transform: translateY(0); }
+        .help-title { font-size: 22px; font-weight: 800; margin-bottom: 20px; color: #2e1a5b; }
+        .help-section { margin-bottom: 20px; }
+        .help-section h4 { font-size: 14px; font-weight: 700; margin: 0 0 5px 0; color: #555; text-transform: uppercase; }
+        .help-section p { font-size: 14px; line-height: 1.5; color: #444; margin: 0; }
+        .close-help { position: absolute; top: 20px; right: 20px; cursor: pointer; font-size: 24px; color: #999; }
 
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+        /* CUSTOM DATE FILTER STYLES */
+        .year-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; background: #f8f9fa; border-radius: 8px; padding: 5px; }
+        .year-btn { background: none; border: none; font-size: 16px; cursor: pointer; padding: 5px 10px; color: #555; transition: transform 0.2s; }
+        .year-btn:hover { color: #000; transform: scale(1.2); }
+        .year-display { font-weight: 700; color: #333; font-size: 15px; }
+        
+        .month-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .month-item { 
+            font-size: 12px; text-align: center; padding: 8px 0; border: 1px solid #eee; border-radius: 6px; cursor: pointer; 
+            background: white; color: #555; font-weight: 500; transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .month-item:hover:not(.disabled) { border-color: #bbb; background: #f9f9f9; transform: scale(1.05); }
+        .month-item.selected { background: #2e1a5b; color: white; border-color: #2e1a5b; transform: scale(1.05); }
+        .month-item.disabled { color: #ccc; cursor: default; background: #f9f9f9; }
+
+        /* ANIMATIONS */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideDownFade { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUpFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
+
+    <div id="help-modal">
+        <div class="help-content">
+            <span class="close-help" onclick="toggleHelp()">×</span>
+            <div class="help-title">How to use the Map</div>
+            
+            <div class="help-section">
+                <h4>🌍 Exploring Events</h4>
+                <p>Switch between <b>Map View</b> to see locations and <b>List View</b> to see a monthly calendar agenda.</p>
+            </div>
+            
+            <div class="help-section">
+                <h4>❤️ Using Favorites</h4>
+                <p>Click the <b>Heart Icon</b> on any event card to save it. You can then click the <b>"Saved"</b> button at the top to see your personal shortlist. Your favorites are saved on this device.</p>
+            </div>
+            
+            <div class="help-section">
+                <h4>🔎 Filtering</h4>
+                <p>Use the sidebar to filter by <b>Category</b>, <b>Organizer</b>, or <b>Date</b>. In List View, use the top bar to filter by <b>Location</b> (Continent & Country).</p>
+            </div>
+            <button class="btn-action" onclick="toggleHelp()">Got it!</button>
+        </div>
+    </div>
 
     <div id="sidebar">
         <div class="sidebar-header"><h2 style="margin: 0; font-size: 1.4rem;">Global Events</h2></div>
@@ -285,29 +466,26 @@
                 </div>
             </div>
             
-            <label style="font-size: 0.85em; font-weight: bold; color: #777; display: block; margin-bottom: 5px;">DATE FILTER</label>
-            <div class="date-picker-container">
-                <input type="text" id="date-range-picker" placeholder="📆 Select Date or Range...">
-                <span class="clear-date" id="clear-date-btn" onclick="clearDateFilter()">× Clear Dates</span>
-            </div>
-
-            <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 15px;">
-            
-            <div id="location-list-filter" style="display: none;">
-                <div class="accordion-item">
-                    <div class="accordion-header" onclick="toggleAccordion('acc-loc', this)">
-                        LOCATIONS <span class="accordion-icon">▼</span>
-                    </div>
-                    <div id="acc-loc" class="accordion-body">
-                        <div class="filter-actions">
-                            <span class="filter-link" onclick="toggleAll('loc-child-checkbox', true); toggleAll('loc-parent-checkbox', true);">Select All</span>
-                            <span class="filter-link clear" onclick="toggleAll('loc-child-checkbox', false); toggleAll('loc-parent-checkbox', false);">Clear All</span>
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion('acc-date', this)">
+                    DATE FILTER <span class="accordion-icon">▼</span>
+                </div>
+                <div id="acc-date" class="accordion-body">
+                    <div style="padding-bottom: 15px;"> <div class="filter-actions">
+                            <span class="filter-link clear" onclick="clearDateFilter()">Clear Dates</span>
                         </div>
-                        <div id="dynamic-locations-container"></div>
+                        <div class="year-nav">
+                            <button class="year-btn" onclick="changeFilterYear(-1)">‹</button>
+                            <span class="year-display" id="filter-year-display">2026</span>
+                            <button class="year-btn" onclick="changeFilterYear(1)">›</button>
+                        </div>
+                        <div class="month-grid" id="month-grid-container"></div>
                     </div>
                 </div>
             </div>
 
+            <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 15px;">
+            
             <div class="accordion-item">
                 <div class="accordion-header" onclick="toggleAccordion('acc-orgs', this)">
                     ORGANIZERS <span class="accordion-icon">▼</span>
@@ -321,22 +499,6 @@
                 </div>
             </div>
 
-            <div class="accordion-item">
-                <div class="accordion-header" onclick="toggleAccordion('acc-type', this)">EVENT TYPE <span class="accordion-icon">▼</span></div>
-                <div id="acc-type" class="accordion-body">
-                    <div class="filter-actions">
-                        <span class="filter-link" onclick="toggleAll('type-checkbox', true)">All</span>
-                        <span class="filter-link clear" onclick="toggleAll('type-checkbox', false)">Clear</span>
-                    </div>
-                    <label class="filter-item"><input type="checkbox" class="type-checkbox filter-checkbox" value="Workshops"><span class="filter-label">Workshops</span><span class="check-icon">✔</span></label>
-                    <label class="filter-item"><input type="checkbox" class="type-checkbox filter-checkbox" value="Courses"><span class="filter-label">Courses</span><span class="check-icon">✔</span></label>
-                    <label class="filter-item"><input type="checkbox" class="type-checkbox filter-checkbox" value="Retreats"><span class="filter-label">Retreats</span><span class="check-icon">✔</span></label>
-                    <label class="filter-item"><input type="checkbox" class="type-checkbox filter-checkbox" value="Trainings"><span class="filter-label">Trainings</span><span class="check-icon">✔</span></label>
-                    <label class="filter-item"><input type="checkbox" class="type-checkbox filter-checkbox" value="Conference"><span class="filter-label">Conference</span><span class="check-icon">✔</span></label>
-                    <label class="filter-item"><input type="checkbox" class="type-checkbox filter-checkbox" value="Community Gatherings"><span class="filter-label">Community Gatherings</span><span class="check-icon">✔</span></label>
-                </div>
-            </div>
-
             <div class="accordion-item" style="border-bottom: none;">
                 <div class="accordion-header" onclick="toggleAccordion('acc-cats', this)">CATEGORIES <span class="accordion-icon">▼</span></div>
                 <div id="acc-cats" class="accordion-body">
@@ -346,16 +508,16 @@
                     </div>
 
                     <div class="cat-group" style="border-left: 3px solid #2A81CB;">
-                        <div class="cat-header"><input type="checkbox" class="parent-checkbox filter-checkbox"><div class="cat-toggle" onclick="toggleSub(this)">3 Principles <span>▼</span></div></div>
+                        <div class="cat-header"><input type="checkbox" class="parent-checkbox filter-checkbox" data-group="principles"><div class="cat-toggle" onclick="toggleSub(this)">General 3 Principles Understanding <span>▼</span></div></div>
                         <div class="cat-body">
-                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="3p" value="Foundations"><span class="color-dot" style="background:#2A81CB;"></span><span class="filter-label">Foundations</span><span class="check-icon">✔</span></label>
-                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="3p" value="Key Concepts"><span class="color-dot" style="background:#2A81CB;"></span><span class="filter-label">Key Concepts</span><span class="check-icon">✔</span></label>
-                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="3p" value="Getting Started"><span class="color-dot" style="background:#2A81CB;"></span><span class="filter-label">Getting Started</span><span class="check-icon">✔</span></label>
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="principles" value="Foundations"><span class="color-dot" style="background:#2A81CB;"></span><span class="filter-label">Foundations</span><span class="check-icon">✔</span></label>
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="principles" value="Key Concepts"><span class="color-dot" style="background:#2A81CB;"></span><span class="filter-label">Key Concepts</span><span class="check-icon">✔</span></label>
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="principles" value="Getting Started"><span class="color-dot" style="background:#2A81CB;"></span><span class="filter-label">Getting Started</span><span class="check-icon">✔</span></label>
                         </div>
                     </div>
                     <div class="cat-group" style="border-left: 3px solid #2AAD27;">
                         <div class="cat-header">
-                            <input type="checkbox" class="parent-checkbox filter-checkbox">
+                            <input type="checkbox" class="parent-checkbox filter-checkbox" data-group="listening">
                             <div class="cat-toggle" onclick="toggleSub(this)">Deep Listening <span>▼</span></div>
                         </div>
                         <div class="cat-body">
@@ -365,7 +527,7 @@
                         </div>
                     </div>
                     <div class="cat-group" style="border-left: 3px solid #CB8427;">
-                        <div class="cat-header"><input type="checkbox" class="parent-checkbox filter-checkbox"><div class="cat-toggle" onclick="toggleSub(this)">Communities <span>▼</span></div></div>
+                        <div class="cat-header"><input type="checkbox" class="parent-checkbox filter-checkbox" data-group="communities"><div class="cat-toggle" onclick="toggleSub(this)">Working with Communities <span>▼</span></div></div>
                         <div class="cat-body">
                             <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="communities" value="Community Support"><span class="color-dot" style="background:#CB8427;"></span><span class="filter-label">Community Support</span><span class="check-icon">✔</span></label>
                             <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="communities" value="Collective Wellbeing"><span class="color-dot" style="background:#CB8427;"></span><span class="filter-label">Collective Wellbeing</span><span class="check-icon">✔</span></label>
@@ -374,8 +536,8 @@
                     </div>
                     <div class="cat-group" style="border-left: 3px solid #CB2B3E;">
                         <div class="cat-header">
-                            <input type="checkbox" class="parent-checkbox filter-checkbox">
-                            <div class="cat-toggle" onclick="toggleSub(this)">Business <span>▼</span></div>
+                            <input type="checkbox" class="parent-checkbox filter-checkbox" data-group="business">
+                            <div class="cat-toggle" onclick="toggleSub(this)">Working with Businesses and Organizations <span>▼</span></div>
                         </div>
                         <div class="cat-body">
                             <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="business" value="Leadership"><span class="color-dot" style="background:#CB2B3E;"></span><span class="filter-label">Leadership</span><span class="check-icon">✔</span></label>
@@ -385,8 +547,8 @@
                     </div>
                     <div class="cat-group" style="border-left: 3px solid #9C2BCB;">
                         <div class="cat-header">
-                            <input type="checkbox" class="parent-checkbox filter-checkbox">
-                            <div class="cat-toggle" onclick="toggleSub(this)">Schools <span>▼</span></div>
+                            <input type="checkbox" class="parent-checkbox filter-checkbox" data-group="schools">
+                            <div class="cat-toggle" onclick="toggleSub(this)">Working with schools and education <span>▼</span></div>
                         </div>
                         <div class="cat-body">
                             <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="schools" value="Students"><span class="color-dot" style="background:#9C2BCB;"></span><span class="filter-label">Students</span><span class="check-icon">✔</span></label>
@@ -396,13 +558,31 @@
                     </div>
                     <div class="cat-group" style="border-left: 3px solid #CAC428;">
                         <div class="cat-header">
-                            <input type="checkbox" class="parent-checkbox filter-checkbox">
-                            <div class="cat-toggle" onclick="toggleSub(this)">Corrections <span>▼</span></div>
+                            <input type="checkbox" class="parent-checkbox filter-checkbox" data-group="corrections">
+                            <div class="cat-toggle" onclick="toggleSub(this)">Working in Corrections, Probation & Parole, Diversion, Restorative Justice <span>▼</span></div>
                         </div>
                         <div class="cat-body">
                             <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="corrections" value="Rehabilitation"><span class="color-dot" style="background:#CAC428;"></span><span class="filter-label">Rehabilitation</span><span class="check-icon">✔</span></label>
                             <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="corrections" value="Staff Support"><span class="color-dot" style="background:#CAC428;"></span><span class="filter-label">Staff Support</span><span class="check-icon">✔</span></label>
                             <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="corrections" value="Reintegration"><span class="color-dot" style="background:#CAC428;"></span><span class="filter-label">Reintegration</span><span class="check-icon">✔</span></label>
+                        </div>
+                    </div>
+                    <div class="cat-group" style="border-left: 3px solid #20B2AA;">
+                        <div class="cat-header">
+                            <input type="checkbox" class="parent-checkbox filter-checkbox" data-group="health">
+                            <div class="cat-toggle" onclick="toggleSub(this)">Physical Health and The Body-Mind Connection <span>▼</span></div>
+                        </div>
+                        <div class="cat-body">
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="health" value="General"><span class="color-dot" style="background:#20B2AA;"></span><span class="filter-label">General</span><span class="check-icon">✔</span></label>
+                        </div>
+                    </div>
+                    <div class="cat-group" style="border-left: 3px solid #FF69B4;">
+                        <div class="cat-header">
+                            <input type="checkbox" class="parent-checkbox filter-checkbox" data-group="books">
+                            <div class="cat-toggle" onclick="toggleSub(this)">Book Clubs <span>▼</span></div>
+                        </div>
+                        <div class="cat-body">
+                            <label class="filter-item"><input type="checkbox" class="child-checkbox filter-checkbox" data-group="books" value="General"><span class="color-dot" style="background:#FF69B4;"></span><span class="filter-label">General</span><span class="check-icon">✔</span></label>
                         </div>
                     </div>
                 </div>
@@ -411,12 +591,30 @@
     </div>
 
     <div id="main-content">
-        <div class="view-toggle-container">
-            <button class="toggle-btn" id="fav-toggle" onclick="toggleFavoritesMode()">❤️ Saved</button>
-            <button class="toggle-btn active" id="btn-map" onclick="switchView('map')">🗺️ Map</button>
-            <button class="toggle-btn" id="btn-list" onclick="switchView('cards')">📑 List</button>
+        <div id="header-container">
+            <div class="toggle-row">
+                <button class="btn-help-standalone" onclick="toggleHelp()">
+                    <span style="font-size:16px;">?</span> Help
+                </button>
+
+                <div class="view-toggle-container">
+                    <button class="toggle-btn" id="fav-toggle" onclick="toggleFavoritesMode()">❤️ Saved</button>
+                    <button class="toggle-btn active" id="btn-map" onclick="switchView('map')">🗺️ Map</button>
+                    <button class="toggle-btn" id="btn-list" onclick="switchView('cards')">📑 List</button>
+                </div>
+            </div>
+            
+            <div id="top-location-filter">
+                <div id="loc-continents" class="loc-grid-continents"></div>
+                <div id="loc-countries" class="loc-country-level">
+                    <div class="loc-back-btn" onclick="clearCountryFilter()">← Back to Continents</div>
+                    <div id="loc-country-list" class="loc-country-list"></div>
+                </div>
+            </div>
         </div>
-        
+
+        <div id="map-reset-btn" onclick="resetMapView()">🌍 View Full Map</div>
+
         <div id="list-header">
             <h2 id="current-month-label"></h2>
         </div>
@@ -437,7 +635,6 @@
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
     <script>
@@ -466,7 +663,17 @@
             "Canada": "ca", "Australia": "au", "Germany": "de", "France": "fr", "Spain": "es", "Italy": "it", "Netherlands": "nl", "Brazil": "br", "India": "in", "China": "cn", "Japan": "jp", "South Africa": "za", "New Zealand": "nz", "Mexico": "mx", "Russia": "ru", "Sweden": "se", "Norway": "no", "Denmark": "dk", "Finland": "fi", "Switzerland": "ch", "Ireland": "ie", "Belgium": "be", "Austria": "at", "Portugal": "pt", "Greece": "gr", "Poland": "pl", "Czech Republic": "cz", "Hungary": "hu", "Turkey": "tr", "Israel": "il", "Egypt": "eg", "Thailand": "th", "Vietnam": "vn", "Indonesia": "id", "Malaysia": "my", "Singapore": "sg", "Philippines": "ph", "Argentina": "ar", "Chile": "cl", "Colombia": "co", "Peru": "pe", "Morocco": "ma"
         };
 
-        const catColors = { '3 Principles': '#2A81CB', 'Deep Listening': '#2AAD27', 'Communities': '#CB8427', 'Business': '#CB2B3E', 'Schools': '#9C2BCB', 'Corrections': '#CAC428', 'Default': '#555' };
+        const catColors = { 
+            'Principles': '#2A81CB', 
+            'Listening': '#2AAD27', 
+            'Communities': '#CB8427', 
+            'Business': '#CB2B3E', 
+            'Schools': '#9C2BCB', 
+            'Corrections': '#CAC428', 
+            'Physical': '#20B2AA', // Teal
+            'Book': '#FF69B4', // Pink
+            'Default': '#555' 
+        };
 
         const createColorIcon = (colorUrl) => new L.Icon({ iconUrl: colorUrl, shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
         const icons = {
@@ -490,7 +697,14 @@
         }
         function getCatColor(c) {
             if(!c) return catColors['Default'];
-            for(let key in catColors) { if(c.includes(key)) return catColors[key]; }
+            if(c.includes('Principles')) return catColors['Principles'];
+            if(c.includes('Listening')) return catColors['Listening'];
+            if(c.includes('Communities')) return catColors['Communities'];
+            if(c.includes('Business')) return catColors['Business'];
+            if(c.includes('schools')) return catColors['Schools'];
+            if(c.includes('Corrections')) return catColors['Corrections'];
+            if(c.includes('Physical') || c.includes('Health')) return catColors['Physical'];
+            if(c.includes('Book')) return catColors['Book'];
             return catColors['Default'];
         }
 
@@ -501,13 +715,31 @@
         let searchRadius = 100000;
         let userMarker = null;
         let radiusCircle = null;
-        let selectedDateRange = null; 
-        let fpInstance = null;
-        let currentListDate = new Date(); 
         
-        // --- NEW: FAVORITES STATE ---
+        // DATE FILTER STATE
+        let currentFilterYear = new Date().getFullYear();
+        let selectedMonthSet = new Set(); // Stores "YYYY-M"
+        
+        // LOCATION FILTER STATE
+        let selectedContinent = null; // Filter level 1
+        let selectedCountry = null; // Filter level 2
+        
+        let currentListDate = new Date(); 
         let savedEvents = JSON.parse(localStorage.getItem('saved_events') || '[]');
         let showFavoritesOnly = false;
+
+        // --- TOGGLE HELP ---
+        function toggleHelp() {
+            const modal = document.getElementById('help-modal');
+            if(modal.classList.contains('visible')) {
+                modal.classList.remove('visible');
+                setTimeout(() => modal.style.display = 'none', 300);
+            } else {
+                modal.style.display = 'flex';
+                // Slight delay to allow display flex to apply before opacity transition
+                setTimeout(() => modal.classList.add('visible'), 10);
+            }
+        }
 
         // --- LOCATION LOGIC ---
         function toggleLocation() {
@@ -533,9 +765,37 @@
             updateUI();
         }
 
+        // --- RESET MAP LOGIC ---
+        function resetMapView() {
+            map.setView([40.0, 0.0], 2);
+            if(currentView !== 'map') {
+                switchView('map');
+            }
+            closePanel();
+        }
+
         // --- UI LOGIC ---
-        function toggleAccordion(id, h) { document.getElementById(id).classList.toggle('open'); h.classList.toggle('active'); }
-        function toggleSub(t) { const b = t.parentElement.nextElementSibling; b.classList.toggle('open'); t.querySelector('span').style.transform = b.classList.contains('open') ? "rotate(180deg)" : "rotate(0deg)"; }
+        function toggleAccordion(id, h) { 
+            const body = document.getElementById(id);
+            // Toggle CSS class 'open' which handles max-height logic
+            if(body.classList.contains('open')) {
+                body.classList.remove('open');
+                h.classList.remove('active');
+            } else {
+                body.classList.add('open');
+                h.classList.add('active');
+            }
+        }
+        function toggleSub(t) { 
+            const b = t.parentElement.nextElementSibling; 
+            if(b.classList.contains('open')) {
+                b.classList.remove('open');
+                t.querySelector('span').style.transform = "rotate(0deg)";
+            } else {
+                b.classList.add('open');
+                t.querySelector('span').style.transform = "rotate(180deg)";
+            }
+        }
         function toggleAll(className, state) {
             document.querySelectorAll('.' + className).forEach(box => box.checked = state);
             updateUI();
@@ -555,36 +815,188 @@
             const mapDiv = document.getElementById('map');
             const cardDiv = document.getElementById('card-view');
             const btns = document.querySelectorAll('.toggle-btn');
-            const locFilter = document.getElementById('location-list-filter');
+            const topLocFilter = document.getElementById('top-location-filter');
             const listHeader = document.getElementById('list-header');
             const listFooter = document.getElementById('list-footer');
+            const resetBtn = document.getElementById('map-reset-btn');
 
             document.getElementById('btn-map').classList.remove('active');
             document.getElementById('btn-list').classList.remove('active');
             
             if(view === 'map') {
+                // RESET LOCATION FILTER LOGIC HERE
+                selectedContinent = null;
+                selectedCountry = null;
+                renderTopLocationFilter(); // Reset UI state
+
                 document.getElementById('btn-map').classList.add('active');
                 mapDiv.style.display = 'block';
                 cardDiv.classList.remove('active');
-                locFilter.style.display = 'none';
-                listHeader.style.display = 'none';
-                listFooter.style.display = 'none';
+                // Use class for smooth fade out
+                topLocFilter.classList.remove('visible');
+                listHeader.classList.remove('visible');
+                listFooter.classList.remove('visible');
                 map.invalidateSize(); 
+                if(map.getZoom() > 3) resetBtn.classList.add('visible');
             } else {
                 document.getElementById('btn-list').classList.add('active');
                 mapDiv.style.display = 'none';
                 cardDiv.classList.add('active');
-                locFilter.style.display = 'block';
-                listHeader.style.display = 'block';
-                // Only show footer if not in favorites mode
-                if(!showFavoritesOnly) listFooter.style.display = 'flex';
-                else listFooter.style.display = 'none';
+                topLocFilter.classList.add('visible');
+                listHeader.classList.add('visible');
+                
+                // --- FOOTER LOGIC ---
+                // Show footer ONLY if: Not Fav Mode AND No Month Filter AND No Location Filter
+                if(!showFavoritesOnly && selectedMonthSet.size === 0 && !selectedContinent) {
+                    listFooter.classList.add('visible');
+                } else {
+                    listFooter.classList.remove('visible');
+                }
+                
+                resetBtn.classList.remove('visible'); 
             }
             updateUI();
         }
         
         function changeMonth(step) {
             currentListDate.setMonth(currentListDate.getMonth() + step);
+            updateUI();
+        }
+
+        // --- NEW: CUSTOM DATE FILTER LOGIC ---
+        function renderDateFilter() {
+            const container = document.getElementById('month-grid-container');
+            const yearDisplay = document.getElementById('filter-year-display');
+            yearDisplay.innerText = currentFilterYear;
+            container.innerHTML = '';
+
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth();
+
+            months.forEach((m, index) => {
+                const key = `${currentFilterYear}-${index}`;
+                const div = document.createElement('div');
+                div.className = 'month-item';
+                div.innerText = m;
+                
+                // Check past logic
+                if (currentFilterYear < currentYear || (currentFilterYear === currentYear && index < currentMonth)) {
+                    div.classList.add('disabled');
+                } else {
+                    div.onclick = () => toggleMonthFilter(key);
+                }
+
+                if (selectedMonthSet.has(key)) div.classList.add('selected');
+                
+                container.appendChild(div);
+            });
+        }
+
+        function toggleMonthFilter(key) {
+            if (selectedMonthSet.has(key)) {
+                selectedMonthSet.delete(key);
+            } else {
+                selectedMonthSet.add(key);
+            }
+            renderDateFilter();
+            if(currentView === 'cards') switchView('cards');
+            updateUI();
+        }
+
+        function changeFilterYear(delta) {
+            const nextYear = currentFilterYear + delta;
+            if (nextYear < new Date().getFullYear()) return;
+            currentFilterYear = nextYear;
+            renderDateFilter();
+        }
+
+        function clearDateFilter() {
+            selectedMonthSet.clear();
+            currentFilterYear = new Date().getFullYear();
+            renderDateFilter();
+            if(currentView === 'cards') switchView('cards');
+            updateUI();
+        }
+
+        // --- NEW: TOP LOCATION FILTER LOGIC ---
+        function renderTopLocationFilter() {
+            const contContainer = document.getElementById('loc-continents');
+            const countryContainer = document.getElementById('loc-country-list');
+            
+            // 1. Build hierarchy
+            const hierarchy = {};
+            eventsData.forEach(e => {
+                if(e.continent && e.country) {
+                    const c = e.continent.toLowerCase();
+                    if(!hierarchy[c]) hierarchy[c] = new Set();
+                    hierarchy[c].add(e.country);
+                }
+            });
+
+            // 2. Render Continents
+            contContainer.innerHTML = '';
+            for(const continent in hierarchy) {
+                const iconUrl = continentIcons[continent] || '';
+                const btn = document.createElement('div');
+                btn.className = `loc-pill ${selectedContinent === continent ? 'active' : ''}`;
+                btn.innerHTML = `<img src="${iconUrl}" class="loc-icon"> ${continent.toUpperCase()}`;
+                btn.onclick = () => selectContinent(continent, hierarchy[continent]);
+                contContainer.appendChild(btn);
+            }
+
+            // 3. Render Countries if continent selected
+            if(selectedContinent && hierarchy[selectedContinent]) {
+                document.getElementById('loc-continents').style.display = 'none';
+                document.getElementById('loc-countries').style.display = 'flex';
+                
+                countryContainer.innerHTML = '';
+                const countries = Array.from(hierarchy[selectedContinent]).sort();
+                
+                // Add "All [Continent]" button
+                const allBtn = document.createElement('div');
+                allBtn.className = `country-pill ${selectedCountry === null ? 'active' : ''}`;
+                allBtn.innerText = "All " + selectedContinent.charAt(0).toUpperCase() + selectedContinent.slice(1);
+                allBtn.onclick = () => selectCountry(null);
+                countryContainer.appendChild(allBtn);
+
+                countries.forEach(country => {
+                    const code = countryCodes[country] || 'xx';
+                    const flagUrl = `https://flagcdn.com/w20/${code}.png`;
+                    const btn = document.createElement('div');
+                    btn.className = `country-pill ${selectedCountry === country ? 'active' : ''}`;
+                    btn.innerHTML = `<img src="${flagUrl}" class="mini-flag"> ${country}`;
+                    btn.onclick = () => selectCountry(country);
+                    countryContainer.appendChild(btn);
+                });
+
+            } else {
+                document.getElementById('loc-continents').style.display = 'flex';
+                document.getElementById('loc-countries').style.display = 'none';
+            }
+        }
+
+        function selectContinent(continent) {
+            selectedContinent = continent;
+            selectedCountry = null; // Reset country when continent changes
+            renderTopLocationFilter();
+            // Switch logic handles footer visibility
+            if(currentView === 'cards') switchView('cards');
+            updateUI();
+        }
+
+        function selectCountry(country) {
+            selectedCountry = country;
+            renderTopLocationFilter();
+            updateUI();
+        }
+
+        function clearCountryFilter() {
+            selectedContinent = null;
+            selectedCountry = null;
+            renderTopLocationFilter();
+            if(currentView === 'cards') switchView('cards'); // Restore footer
             updateUI();
         }
 
@@ -595,15 +1007,12 @@
             if(showFavoritesOnly) btn.classList.add('fav-active');
             else btn.classList.remove('fav-active');
             
-            // Adjust List View footer visibility
-            if(currentView === 'cards') {
-                document.getElementById('list-footer').style.display = showFavoritesOnly ? 'none' : 'flex';
-            }
+            if(currentView === 'cards') switchView('cards');
             updateUI();
         }
 
         function toggleLike(e, id) {
-            e.stopPropagation(); // Prevent opening the panel
+            e.stopPropagation(); 
             const index = savedEvents.indexOf(id);
             if(index === -1) {
                 savedEvents.push(id);
@@ -611,9 +1020,8 @@
                 savedEvents.splice(index, 1);
             }
             localStorage.setItem('saved_events', JSON.stringify(savedEvents));
-            updateUI(); // Updates Cards
+            updateUI(); 
             
-            // UPDATE PANEL BUTTON IF OPEN (SYNC)
             const panelHeart = document.getElementById('panel-heart-btn');
             if(panelHeart && parseInt(panelHeart.dataset.id) === id) {
                 const isSaved = savedEvents.includes(id);
@@ -637,6 +1045,15 @@
         const markers = L.markerClusterGroup({ maxClusterRadius: 40, zoomToBoundsOnClick: false });
         markers.on('clusterclick', function (a) { map.fitBounds(a.layer.getBounds(), { padding: [50, 50] }); });
 
+        map.on('zoomend', function() {
+            const btn = document.getElementById('map-reset-btn');
+            if(currentView === 'map' && map.getZoom() > 3) {
+                btn.classList.add('visible');
+            } else {
+                btn.classList.remove('visible');
+            }
+        });
+
         map.on('locationfound', function(e) {
             userLocation = e.latlng;
             document.getElementById('locate-text').innerText = "Clear Location";
@@ -658,7 +1075,7 @@
             if (error) { console.error(error); alert("Error loading events."); }
             else {
                 eventsData = data.map(item => ({
-                    id: item.id, // VITAL: Mapped ID
+                    id: item.id, 
                     title: item.title,
                     image_url: item.image_url,
                     start: item.start_time, end: item.end_time,
@@ -672,10 +1089,9 @@
                     desc: item.description, lat: item.lat, lng: item.lng
                 }));
                 renderOrganizerFilter();
-                renderLocationFilter(); 
-                initDatePicker(); 
+                renderTopLocationFilter(); // Init new filter
+                renderDateFilter(); 
                 
-                // CHECK FOR URL PARAM TO OPEN SPECIFIC EVENT
                 const urlParams = new URLSearchParams(window.location.search);
                 const sharedId = urlParams.get('event');
                 if(sharedId) {
@@ -684,84 +1100,6 @@
                 }
 
                 updateUI();
-            }
-        }
-
-        // --- DYNAMIC LOCATION FILTER RENDER ---
-        function renderLocationFilter() {
-            const container = document.getElementById('dynamic-locations-container');
-            container.innerHTML = '';
-            const hierarchy = {};
-            eventsData.forEach(e => {
-                if(e.continent && e.country) {
-                    const c = e.continent.toLowerCase();
-                    if(!hierarchy[c]) hierarchy[c] = new Set();
-                    hierarchy[c].add(e.country);
-                }
-            });
-
-            for (const [continent, countriesSet] of Object.entries(hierarchy)) {
-                const countries = Array.from(countriesSet).sort();
-                const iconUrl = continentIcons[continent] || '';
-                let countryItems = countries.map(country => {
-                    const code = countryCodes[country] || 'xx'; 
-                    const flagUrl = `https://flagcdn.com/w20/${code}.png`;
-                    return `
-                        <label class="filter-item">
-                            <input type="checkbox" class="loc-child-checkbox filter-checkbox" data-continent="${continent}" value="${country}">
-                            <img src="${flagUrl}" class="country-flag" onerror="this.style.display='none'">
-                            <span class="filter-label">${country}</span>
-                            <span class="check-icon">✔</span>
-                        </label>
-                    `;
-                }).join('');
-
-                const groupHTML = `
-                    <div class="cat-group">
-                        <div class="cat-header">
-                            <input type="checkbox" class="loc-parent-checkbox filter-checkbox" data-continent="${continent}">
-                            <div class="cat-toggle" onclick="toggleSub(this)">
-                                <img src="${iconUrl}" class="continent-icon"> ${continent.toUpperCase()} <span>▼</span>
-                            </div>
-                        </div>
-                        <div class="cat-body">
-                            ${countryItems}
-                        </div>
-                    </div>
-                `;
-                container.innerHTML += groupHTML;
-            }
-
-            container.querySelectorAll('.loc-parent-checkbox').forEach(parent => {
-                parent.addEventListener('change', function(e) {
-                    const body = e.target.parentElement.nextElementSibling;
-                    body.querySelectorAll('.loc-child-checkbox').forEach(c => c.checked = e.target.checked);
-                    updateUI();
-                });
-            });
-            container.querySelectorAll('.loc-child-checkbox').forEach(c => c.addEventListener('change', updateUI));
-        }
-
-        function initDatePicker() {
-            fpInstance = flatpickr("#date-range-picker", {
-                mode: "range",
-                dateFormat: "Y-m-d",
-                onChange: function(selectedDates, dateStr, instance) {
-                    selectedDateRange = selectedDates;
-                    const clearBtn = document.getElementById('clear-date-btn');
-                    if(selectedDates.length > 0) clearBtn.style.display = 'block';
-                    else clearBtn.style.display = 'none';
-                    updateUI();
-                }
-            });
-        }
-
-        function clearDateFilter() {
-            if(fpInstance) {
-                fpInstance.clear(); 
-                selectedDateRange = null; 
-                document.getElementById('clear-date-btn').style.display = 'none'; 
-                updateUI(); 
             }
         }
 
@@ -784,39 +1122,67 @@
         function updateUI() {
             updateVisuals(); 
 
-            // Update Label based on mode
-            const monthLabel = showFavoritesOnly ? "Your Saved Events" : currentListDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            // HEADER LABEL LOGIC
+            let monthLabel = "";
+            if(showFavoritesOnly) {
+                monthLabel = "Your Saved Events";
+            } else if (selectedMonthSet.size > 0) {
+                monthLabel = "Selected Dates";
+            } else if (selectedCountry) {
+                monthLabel = "Events in " + selectedCountry;
+            } else if (selectedContinent) {
+                monthLabel = "Events in " + selectedContinent.charAt(0).toUpperCase() + selectedContinent.slice(1);
+            } else {
+                monthLabel = currentListDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            }
             document.getElementById('current-month-label').innerText = monthLabel;
 
             const searchText = document.getElementById('search-input').value.toLowerCase();
             const checkedSubcats = Array.from(document.querySelectorAll('.child-checkbox:checked')).map(b => b.value.toLowerCase());
-            const checkedTypes = Array.from(document.querySelectorAll('.type-checkbox:checked')).map(b => b.value.toLowerCase());
             const checkedOrgs = Array.from(document.querySelectorAll('.org-checkbox:checked')).map(b => b.value.toLowerCase());
-            const checkedLocations = Array.from(document.querySelectorAll('.loc-child-checkbox:checked')).map(b => b.value);
 
             markers.clearLayers();
             const cardContainer = document.getElementById('card-view');
             let cardsHTML = '';
 
+            // FOOTER VISIBILITY LOGIC (Refined)
+            const listFooter = document.getElementById('list-footer');
+            if(currentView === 'cards') {
+                if(!showFavoritesOnly && selectedMonthSet.size === 0 && !selectedContinent) {
+                    listFooter.classList.add('visible');
+                } else {
+                    listFooter.classList.remove('visible');
+                }
+            } else {
+                listFooter.classList.remove('visible');
+            }
+
             eventsData.forEach((event, index) => {
                 const sub = event.subcategory ? event.subcategory.toLowerCase() : '';
-                const type = event.format ? event.format.toLowerCase() : '';
                 const org = event.organizer ? event.organizer.toLowerCase() : ''; 
                 
                 const catMatch = checkedSubcats.length === 0 || checkedSubcats.includes(sub);
-                const typeMatch = checkedTypes.length === 0 || checkedTypes.includes(type);
                 const orgMatch = checkedOrgs.length === 0 || checkedOrgs.includes(org);
                 const textMatch = (event.title && event.title.toLowerCase().includes(searchText)) || (event.city && event.city.toLowerCase().includes(searchText));
                 
-                // FAVORITES FILTER
                 let favMatch = true;
                 if(showFavoritesOnly) {
                     favMatch = savedEvents.includes(event.id);
                 }
 
+                // NEW LOCATION FILTER LOGIC
                 let locFilterMatch = true;
-                if(currentView === 'cards' && checkedLocations.length > 0) {
-                     locFilterMatch = checkedLocations.includes(event.country);
+                if(currentView === 'cards') {
+                    if (selectedContinent) {
+                        if (event.continent && event.continent.toLowerCase() !== selectedContinent.toLowerCase()) {
+                            locFilterMatch = false;
+                        }
+                    }
+                    if (selectedCountry) {
+                        if (event.country !== selectedCountry) {
+                            locFilterMatch = false;
+                        }
+                    }
                 }
 
                 let locMatch = true;
@@ -826,46 +1192,49 @@
                 }
 
                 let dateMatch = true;
-                if(selectedDateRange && selectedDateRange.length > 0) {
-                    const eventDate = new Date(event.start).setHours(0,0,0,0);
-                    const startDate = selectedDateRange[0].setHours(0,0,0,0);
-                    if(selectedDateRange.length === 2) {
-                        const endDate = selectedDateRange[1].setHours(23,59,59,999);
-                        if(eventDate < startDate || eventDate > endDate) dateMatch = false;
-                    } else {
-                        if(eventDate !== startDate) dateMatch = false;
+                const eventStart = new Date(event.start);
+                const eventEnd = new Date(event.end);
+                
+                if(selectedMonthSet.size > 0) {
+                    let overlapFound = false;
+                    for (let key of selectedMonthSet) {
+                        const [yearStr, monthStr] = key.split('-');
+                        const mYear = parseInt(yearStr);
+                        const mIndex = parseInt(monthStr);
+                        const mStart = new Date(mYear, mIndex, 1);
+                        const mEnd = new Date(mYear, mIndex + 1, 0, 23, 59, 59);
+                        if (eventEnd >= mStart && eventStart <= mEnd) {
+                            overlapFound = true;
+                            break;
+                        }
                     }
+                    if(!overlapFound) dateMatch = false;
                 }
                 
-                if (catMatch && typeMatch && orgMatch && dateMatch && textMatch && locMatch && locFilterMatch && favMatch) {
+                if (catMatch && orgMatch && dateMatch && textMatch && locMatch && locFilterMatch && favMatch) {
                     
-                    // MAP LOGIC
                     const marker = L.marker([event.lat, event.lng], { icon: getCategoryIcon(event.category) });
                     marker.on('click', () => openPanel(event));
                     markers.addLayer(marker);
 
-                    // LIST VIEW LOGIC
-                    const sDate = new Date(event.start);
-                    
-                    let listMonthMatch = false;
-                    if (showFavoritesOnly) {
-                        listMonthMatch = true; // Show all saved
+                    // PAGINATION LOGIC
+                    let listVisible = false;
+                    if (showFavoritesOnly || selectedMonthSet.size > 0 || selectedContinent) {
+                        listVisible = true; 
                     } else {
-                        if (sDate.getMonth() === currentListDate.getMonth() && sDate.getFullYear() === currentListDate.getFullYear()) {
-                            listMonthMatch = true;
+                        if (eventStart.getMonth() === currentListDate.getMonth() && eventStart.getFullYear() === currentListDate.getFullYear()) {
+                            listVisible = true;
                         }
                     }
 
-                    if(currentView === 'cards' && listMonthMatch) {
-                        const month = sDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
-                        const day = sDate.toLocaleDateString('en-US', { day: 'numeric' });
-                        const weekday = sDate.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
-                        const dateRange = `${sDate.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'})} - ${new Date(event.end).toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'})}`;
+                    if(currentView === 'cards' && listVisible) {
+                        const month = eventStart.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+                        const day = eventStart.toLocaleDateString('en-US', { day: 'numeric' });
+                        const weekday = eventStart.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+                        const dateRange = `${eventStart.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'})} - ${new Date(event.end).toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'})}`;
                         const bgStyle = event.image_url ? `background-image: url('${event.image_url}');` : `background-color: #1a0f35; display:flex; align-items:center; justify-content:center;`;
                         const catColor = getCatColor(event.category);
                         const orgImg = organizerPhotos[event.organizer] || defaultAvatar + event.organizer;
-                        
-                        // Heart State
                         const isSaved = savedEvents.includes(event.id);
                         const heartClass = isSaved ? 'liked' : '';
                         const heartIcon = isSaved ? '❤️' : '🤍';
@@ -900,7 +1269,7 @@
             });
             
             map.addLayer(markers);
-            if(cardsHTML === '') cardsHTML = `<div style="text-align:center; padding:40px; color:#666; width:100%; grid-column: 1/-1;">No events found.</div>`;
+            if(cardsHTML === '') cardsHTML = `<div style="text-align:center; padding:40px; color:#666; width:100%; grid-column: 1/-1;">No events found matching your criteria.</div>`;
             cardContainer.innerHTML = cardsHTML;
         }
 
@@ -935,14 +1304,21 @@
             let avatarUrl = organizerPhotos[event.organizer] || defaultAvatar + event.organizer;
             let catColor = getCatColor(event.category);
             
-            // HEART STATE
             const isSaved = savedEvents.includes(event.id);
             const heartClass = isSaved ? 'liked' : '';
             const heartIcon = isSaved ? '❤️' : '🤍';
 
             content.innerHTML = `
                 ${imgHTML}
-                <div class="panel-title">${event.title}</div>
+                
+                <div class="panel-header-row">
+                    <div class="panel-title">${event.title}</div>
+                    <div class="panel-top-buttons">
+                        <button class="btn-icon-circle" onclick="shareEvent({title:'${event.title.replace(/'/g, "\\'")}', id:${event.id}})">🔗</button>
+                        <button id="panel-heart-btn" data-id="${event.id}" class="btn-icon-circle ${heartClass}" onclick="toggleLike(event, ${event.id})">${heartIcon}</button>
+                    </div>
+                </div>
+
                 <div class="badge-row">
                     <span class="badge" style="background:${catColor}20; color:${catColor};">${event.category}</span>
                     <span class="badge">${event.format}</span>
@@ -962,8 +1338,6 @@
                 <div style="line-height: 1.6; color: #444;">${event.desc}</div>
                 
                 <div class="panel-actions">
-                    <button class="btn-action btn-share" onclick="shareEvent({title:'${event.title.replace(/'/g, "\\'")}', id:${event.id}})">🔗</button>
-                    <button id="panel-heart-btn" data-id="${event.id}" class="btn-action btn-heart ${heartClass}" onclick="toggleLike(event, ${event.id})">${heartIcon}</button>
                     ${linkBtn}
                 </div>
             `;
