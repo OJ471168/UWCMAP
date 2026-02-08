@@ -8,10 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-geosearch@3.11.0/dist/geosearch.min.css" />
-    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
 
     <style>
@@ -56,6 +54,7 @@
         .justify-center { justify-content: center; }
         .gap-2 { gap: 0.5rem; }
         .gap-4 { gap: 1rem; }
+        .relative { position: relative; }
         
         /* Icons */
         .icon { width: 18px; height: 18px; stroke-width: 2; stroke: currentColor; fill: none; }
@@ -73,32 +72,71 @@
         .btn-sm { padding: 6px 12px; font-size: 0.75rem; }
         .btn-danger-soft { background: #FEF2F2; color: var(--danger); }
         .btn-danger-soft:hover { background: #FEE2E2; }
+        .btn-danger-icon { color: var(--danger); background: transparent; padding: 8px; border-radius: var(--radius-md); }
+        .btn-danger-icon:hover { background: #FEF2F2; }
 
         input, select, textarea { width: 100%; padding: 10px 12px; background-color: #FFFFFF; border: 1px solid var(--input-border); border-radius: var(--radius-md); font-size: 0.875rem; color: var(--text-main); font-family: var(--font-main); box-shadow: var(--shadow-sm); transition: border-color 0.2s, box-shadow 0.2s; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
         label { display: block; font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 6px; margin-top: 18px; }
 
+        /* Suggestions Box for Autocomplete */
+        .suggestions-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            z-index: 50;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 4px;
+        }
+        .suggestion-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.875rem;
+        }
+        .suggestion-item:hover {
+            background-color: var(--bg-input);
+        }
+
         /* --- 4. LAYOUTS --- */
         .layout-container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
         .auth-card { background: white; padding: 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); max-width: 400px; width: 100%; margin: 100px auto; text-align: center; border: 1px solid var(--border); }
         
-        .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
         .user-menu { display: flex; align-items: center; gap: 12px; padding: 6px 12px; background: white; border: 1px solid var(--border); border-radius: 30px; cursor: pointer; transition: 0.2s; }
         .user-menu:hover { background: var(--bg-input); }
         .avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: #E5E7EB; }
         
         .section-title { font-size: 1.125rem; font-weight: 600; color: var(--text-main); margin: 32px 0 16px 0; display: flex; align-items: center; gap: 10px; }
-        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+        
+        /* UPDATED: SMALLER CARDS GRID */
+        .grid-container { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
+            gap: 16px; 
+        }
 
         .event-card { background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; position: relative; }
         .event-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
         .card-image-wrapper { width: 100%; padding-top: 56.25%; position: relative; background: #E5E7EB; }
         .card-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
-        .card-content { padding: 20px; flex: 1; display: flex; flex-direction: column; }
-        .card-title { font-size: 1rem; font-weight: 600; margin: 0 0 8px 0; color: var(--text-main); line-height: 1.4; }
-        .card-meta { display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 20px; }
+        
+        /* UPDATED: COMPACT CARD CONTENT */
+        .card-content { padding: 12px; flex: 1; display: flex; flex-direction: column; }
+        .card-title { font-size: 0.95rem; font-weight: 600; margin: 0 0 4px 0; color: var(--text-main); line-height: 1.3; }
+        .card-meta { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 12px; }
         .meta-item { display: flex; align-items: center; gap: 6px; }
-        .card-footer { margin-top: auto; display: flex; gap: 10px; border-top: 1px solid var(--bg-body); padding-top: 15px; }
+        
+        /* UPDATED: COMPACT FOOTER */
+        .card-footer { margin-top: auto; display: flex; gap: 8px; border-top: 1px solid var(--bg-body); padding: 10px 12px; align-items: center; }
 
         .badge { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 8px; border-radius: 4px; font-weight: 700; }
         .badge-draft { background: #FFF7ED; color: #C2410C; border: 1px solid #FFEDD5; }
@@ -119,9 +157,10 @@
         .sa-main { margin-left: 250px; padding: 40px; background: var(--bg-input); min-height: 100vh; }
         .sa-nav-item { padding: 10px; border-radius: 6px; cursor: pointer; margin-bottom: 5px; color: var(--text-secondary); font-weight: 500; }
         .sa-nav-item:hover, .sa-nav-item.active { background: var(--primary-light); color: var(--primary); }
+        
         .sa-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-sm); }
         .sa-table th { background: #F3F4F6; text-align: left; padding: 12px 20px; font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); }
-        .sa-table td { padding: 15px 20px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        .sa-table td { padding: 12px 20px; border-bottom: 1px solid var(--border); font-size: 0.9rem; vertical-align: middle; }
         .sa-stat-card { background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--border); }
 
         /* Specifics */
@@ -145,7 +184,7 @@
 
         .skeleton { background: #E5E7EB; border-radius: 4px; animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
-        .card-skeleton { height: 320px; border-radius: var(--radius-lg); background: white; border: 1px solid var(--border); }
+        .card-skeleton { height: 250px; border-radius: var(--radius-lg); background: white; border: 1px solid var(--border); }
         
         #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 3000; display: flex; flex-direction: column; gap: 10px; }
         .toast { background: white; border-left: 4px solid var(--primary); padding: 16px 20px; border-radius: 4px; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 12px; min-width: 300px; font-size: 0.9rem; font-weight: 500; animation: slideIn 0.3s ease-out forwards; }
@@ -252,8 +291,22 @@
                     <h2>Global Event Monitor</h2>
                     <button class="btn btn-ghost" onclick="loadAdminData()">Refresh</button>
                 </div>
+
+                <div style="background:white; padding:15px; border-radius:8px; border:1px solid var(--border); margin-bottom:20px; display:flex; gap:15px; align-items:end;">
+                    <div class="relative" style="flex:1;">
+                        <label style="margin-top:0;">Filter by Facilitator</label>
+                        <input type="text" id="admin_filter_facilitator" placeholder="Search name..." oninput="handleAdminFacilitatorSearch(this.value)" autocomplete="off">
+                        <div id="admin_facilitator_suggestions" class="suggestions-dropdown hidden"></div>
+                    </div>
+                    <div style="flex:1;">
+                        <label style="margin-top:0;">Filter by Date</label>
+                        <input type="date" id="admin_filter_date" onchange="filterAdminEvents()">
+                    </div>
+                    <button class="btn btn-secondary" onclick="resetAdminFilters()">Reset</button>
+                </div>
+
                 <table class="sa-table">
-                    <thead><tr><th>Event</th><th>Organizer</th><th>Status</th><th>Visibility</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Event</th><th>Dates</th><th>Organizer</th><th>Visibility</th><th>Actions</th></tr></thead>
                     <tbody id="events-table"></tbody>
                 </table>
             </div>
@@ -349,7 +402,7 @@
                 <input type="hidden" id="lat"><input type="hidden" id="lng">
             </div>
 
-            <label>Join/Details Link</label><input type="text" id="link" placeholder="Past link here...">
+            <label>Join/Details Link</label><input type="text" id="link" placeholder="Paste link here...">
             <div class="row">
                 <div class="col">
                     <label>Category</label>
@@ -508,9 +561,11 @@
                             ${isDraft ? '<span class="badge badge-draft">Draft</span>' : '<span class="badge badge-live">Published</span>'}
                         </div>
                     </div>
-                    <div class="card-footer" style="padding:15px 20px;">
-                        <button class="btn btn-secondary" style="flex:1; font-size:0.8rem;" onclick='openDrawer(${JSON.stringify(event)})'>Edit Details</button>
-                        <button class="btn btn-ghost" style="color:var(--danger);" onclick="deleteEvent('${event.id}')" title="Remove"><svg class="icon-sm" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                    <div class="card-footer">
+                        <button class="btn btn-secondary" style="flex:1; font-size:0.75rem;" onclick='openDrawer(${JSON.stringify(event)})'>Edit Details</button>
+                        <button class="btn-danger-icon" onclick="deleteEvent('${event.id}')" title="Remove">
+                            <svg class="icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
                     </div>
                 `;
 
@@ -583,7 +638,6 @@
         }
 
         function confirmCloseDrawer() {
-            // Safety check: if user typed something (title or description), verify before closing
             const title = document.getElementById('title').value;
             const desc = quill.getText().trim();
             if (title || desc) {
@@ -608,34 +662,123 @@
             document.getElementById('super_admin_view').classList.add('hidden');
             document.getElementById('dashboard_view').classList.remove('hidden');
         }
+        
         async function loadAdminData() {
-            const { data: u } = await supabaseClient.from('profiles').select('*').order('full_name', { ascending: true }); // SORT USERS A-Z
+            const { data: u } = await supabaseClient.from('profiles').select('*').order('full_name', { ascending: true });
             if(u) { adminAllUsers = u; renderAdminUsers(u); }
-            const { data: e } = await supabaseClient.from('events').select('*').order('created_at', { ascending: false }); // SORT EVENTS NEWEST
+            
+            // Fetch events excluding drafts
+            const { data: e } = await supabaseClient.from('events')
+                .select('*')
+                .neq('status', 'draft') // Filter out drafts
+                .order('created_at', { ascending: false });
             if(e) { adminAllEvents = e; renderAdminEvents(e); }
         }
+
         function renderAdminUsers(list) {
             document.getElementById('stat-users').innerText = list.length;
             document.getElementById('stat-active').innerText = list.filter(u=>!u.is_blocked).length;
             document.getElementById('stat-blocked').innerText = list.filter(u=>u.is_blocked).length;
+            
             document.getElementById('users-table').innerHTML = list.map(u => `
                 <tr>
-                    <td>${u.full_name || 'No Name'} <div style="font-size:11px; color:#999;">${u.email || ''}</div></td>
+                    <td>
+                        <div class="flex items-center gap-2">
+                            <img src="${u.avatar_url || 'https://via.placeholder.com/32'}" class="avatar" style="border:1px solid var(--border);">
+                            <div>
+                                <div style="font-weight:600;">${u.full_name || 'No Name'}</div>
+                                <div style="font-size:11px; color:#999;">${u.email || ''}</div>
+                            </div>
+                        </div>
+                    </td>
                     <td>${u.role}</td>
                     <td>${u.is_blocked ? '<span style="color:var(--danger)">Blocked</span>' : '<span style="color:var(--success)">Active</span>'}</td>
                     <td><button class="btn btn-sm btn-secondary" onclick="toggleBlock('${u.id}', ${!u.is_blocked})">${u.is_blocked ? 'Unblock' : 'Block'}</button></td>
                 </tr>`).join('');
         }
+
         function renderAdminEvents(list) {
-            document.getElementById('events-table').innerHTML = list.map(e => `
+            document.getElementById('events-table').innerHTML = list.map(e => {
+                const start = new Date(e.start_time).toLocaleDateString(undefined, { month:'short', day:'numeric'});
+                const end = new Date(e.end_time).toLocaleDateString(undefined, { month:'short', day:'numeric'});
+                
+                return `
                 <tr>
-                    <td>${e.title}</td>
+                    <td style="font-weight:500;">${e.title}</td>
+                    <td style="font-size:0.85rem; color:var(--text-secondary);">${start} - ${end}</td>
                     <td>${e.organizer}</td>
-                    <td>${e.status}</td>
                     <td>${e.is_hidden ? '<span class="badge badge-hidden">Hidden</span>' : '<span class="badge badge-live">Visible</span>'}</td>
                     <td><button class="btn btn-sm btn-secondary" onclick="toggleEventVisibility('${e.id}', ${e.is_hidden})">${e.is_hidden ? 'Unhide' : 'Hide'}</button></td>
-                </tr>`).join('');
+                </tr>`;
+            }).join('');
         }
+
+        function filterAdminEvents() {
+            const facQuery = document.getElementById('admin_filter_facilitator').value.toLowerCase();
+            const dateQuery = document.getElementById('admin_filter_date').value;
+            
+            const filtered = adminAllEvents.filter(e => {
+                const matchFac = (e.organizer || '').toLowerCase().includes(facQuery);
+                let matchDate = true;
+                if(dateQuery) {
+                    const filterDate = new Date(dateQuery).setHours(0,0,0,0);
+                    const eventDate = new Date(e.start_time).setHours(0,0,0,0);
+                    matchDate = eventDate >= filterDate;
+                }
+                return matchFac && matchDate;
+            });
+            renderAdminEvents(filtered);
+        }
+
+        function resetAdminFilters() {
+            document.getElementById('admin_filter_facilitator').value = "";
+            document.getElementById('admin_filter_date').value = "";
+            document.getElementById('admin_facilitator_suggestions').classList.add('hidden'); // Hide suggestions
+            renderAdminEvents(adminAllEvents);
+        }
+        
+        // Autocomplete Logic for Facilitator Filter
+        function handleAdminFacilitatorSearch(query) {
+            const suggestionsBox = document.getElementById('admin_facilitator_suggestions');
+            
+            // Perform filtering
+            filterAdminEvents(); 
+
+            if (!query) {
+                suggestionsBox.classList.add('hidden');
+                return;
+            }
+
+            // Get unique facilitator names from adminAllEvents that match the query
+            const uniqueFacilitators = [...new Set(adminAllEvents.map(e => e.organizer))]
+                .filter(name => name && name.toLowerCase().includes(query.toLowerCase()));
+
+            if (uniqueFacilitators.length === 0) {
+                suggestionsBox.classList.add('hidden');
+                return;
+            }
+
+            suggestionsBox.innerHTML = uniqueFacilitators.map(name => 
+                `<div class="suggestion-item" onclick="selectAdminFacilitator('${name}')">${name}</div>`
+            ).join('');
+            
+            suggestionsBox.classList.remove('hidden');
+        }
+
+        function selectAdminFacilitator(name) {
+            document.getElementById('admin_filter_facilitator').value = name;
+            document.getElementById('admin_facilitator_suggestions').classList.add('hidden');
+            filterAdminEvents();
+        }
+        
+        // Close suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            const container = document.getElementById('admin_filter_facilitator').parentNode;
+            if (!container.contains(e.target)) {
+                document.getElementById('admin_facilitator_suggestions').classList.add('hidden');
+            }
+        });
+
         async function toggleEventVisibility(id, currentStatus) {
             const { error } = await supabaseClient.from('events').update({ is_hidden: !currentStatus }).eq('id', id);
             if(error) showToast(error.message, "error"); else { showToast("Visibility Updated", "success"); loadAdminData(); }
@@ -652,7 +795,7 @@
             loadAdminData();
         }
 
-        // --- Location & Map (Updated with Search) ---
+        // --- Location & Map ---
         function toggleLocationType() {
             const type = document.getElementById('location_type').value;
             const wrapper = document.getElementById('physical_location_wrapper');
@@ -667,7 +810,6 @@
                 mapInstance = L.map('map_preview');
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapInstance);
                 
-                // ADD SEARCH CONTROL
                 const provider = new GeoSearch.OpenStreetMapProvider();
                 const search = new GeoSearch.GeoSearchControl({
                     provider: provider,
@@ -728,8 +870,6 @@
                 cropper.destroy(); cropper = null;
             }, 'image/jpeg', 0.9);
         }
-        
-        // Helper: Convert current crop to blob automatically
         function getCroppedBlob() {
             return new Promise((resolve) => {
                 if (!cropper) return resolve(null);
@@ -738,7 +878,6 @@
                 }, 'image/jpeg', 0.9);
             });
         }
-
         function cancelCrop() {
             document.getElementById('file_input').value = "";
             document.getElementById('cropper_wrapper').classList.add('hidden');
@@ -764,7 +903,6 @@
             btn.disabled = true; btn.innerText = "Saving...";
             
             try {
-                // FIXED: If user forgot to click 'Apply Crop', do it now automatically
                 if (cropper) {
                     croppedBlob = await getCroppedBlob();
                 }
@@ -816,7 +954,6 @@
         
         async function deleteEvent(id) {
             if(!confirm("Are you sure you want to remove this event?")) return;
-            // UPDATE: Soft delete by hiding
             const { error } = await supabaseClient.from('events').update({ is_hidden: true }).eq('id', id);
             if(error) showToast(error.message, "error");
             else { showToast("Event removed", "success"); loadUserEvents(); }
@@ -864,8 +1001,6 @@
             ).join('');
             box.classList.remove('hidden');
         }
-        
-        // NEW: Check Enter key for custom facilitator names
         function checkEnter(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -873,16 +1008,12 @@
                 if (val) addCoFacilitator({ name: val });
             }
         }
-
-        // NEW: Hybrid add (Database vs Custom)
         function addCoFacilitator(p) {
             let newFac = {};
             if (p.id) {
-                // Database Profile
                 newFac = { id: p.id, name: p.full_name, avatar: p.avatar_url };
                 if (coFacilitators.find(f => f.id === newFac.id)) return;
             } else {
-                // Custom Name
                 newFac = { name: p.name || p.full_name };
                 if (coFacilitators.find(f => f.name === newFac.name)) return;
             }
@@ -891,8 +1022,6 @@
             document.getElementById('co_facilitator_input').value = "";
             document.getElementById('suggestions_box').classList.add('hidden');
         }
-
-        // NEW: Render with fallback for missing avatars
         function renderCoFacilitators() {
             const el = document.getElementById('co_facilitators_list');
             el.innerHTML = coFacilitators.map((f, i) => {
