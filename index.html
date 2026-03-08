@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Event & Resource Management Platform</title>
+    <title>UPWC Event & Resource Platform</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
@@ -15,12 +15,12 @@
     <style>
         /* --- 1. CORE VARIABLES & RESET --- */
         :root {
-            --bg-body: #F3F4F6;
+            --bg-body: #F9FAFB;
             --bg-surface: #FFFFFF;
-            --bg-input: #F9FAFB;
+            --bg-input: #F3F4F6;
             
             --text-main: #111827;
-            --text-secondary: #6B7280;
+            --text-secondary: #4B5563;
             --text-tertiary: #9CA3AF;
             
             --primary: #4F46E5;
@@ -37,6 +37,7 @@
             --radius-lg: 12px;
             
             --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             
             --font-main: 'Inter', system-ui, -apple-system, sans-serif;
@@ -53,106 +54,86 @@
         .justify-between { justify-content: space-between; }
         .justify-center { justify-content: center; }
         .gap-2 { gap: 0.5rem; }
+        .gap-3 { gap: 0.75rem; }
         .gap-4 { gap: 1rem; }
         .relative { position: relative; }
         
         /* Icons */
         .icon { width: 18px; height: 18px; stroke-width: 2; stroke: currentColor; fill: none; }
-        .icon-sm { width: 14px; height: 14px; }
+        .icon-sm { width: 14px; height: 14px; stroke-width: 2; stroke: currentColor; fill: none; }
 
         /* --- 3. COMPONENTS --- */
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border-radius: var(--radius-md); font-weight: 500; font-size: 0.875rem; cursor: pointer; transition: all 0.2s ease; border: 1px solid transparent; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border-radius: var(--radius-md); font-weight: 500; font-size: 0.875rem; cursor: pointer; transition: all 0.2s ease; border: 1px solid transparent; text-decoration: none; }
         .btn:active { transform: scale(0.98); }
         .btn-primary { background-color: var(--primary); color: white; box-shadow: var(--shadow-sm); }
-        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-primary:hover { background-color: var(--primary-hover); box-shadow: var(--shadow-md); }
         .btn-secondary { background-color: white; border-color: var(--border); color: var(--text-main); }
-        .btn-secondary:hover { background-color: var(--bg-input); border-color: #d1d5db; }
+        .btn-secondary:hover { background-color: var(--bg-body); border-color: var(--input-border); }
         .btn-ghost { background: transparent; color: var(--text-secondary); }
         .btn-ghost:hover { background: var(--bg-input); color: var(--text-main); }
         .btn-sm { padding: 6px 12px; font-size: 0.75rem; }
-        .btn-danger-soft { background: #FEF2F2; color: var(--danger); }
-        .btn-danger-soft:hover { background: #FEE2E2; }
-        .btn-danger-icon { color: var(--danger); background: transparent; padding: 8px; border-radius: var(--radius-md); }
-        .btn-danger-icon:hover { background: #FEF2F2; }
+        
+        .btn-danger-soft { background: #FEF2F2; color: var(--danger); border: 1px solid transparent; }
+        .btn-danger-soft:hover { background: #FEE2E2; border-color: #FECACA; }
+        .btn-danger-icon { color: var(--text-tertiary); background: transparent; padding: 6px; border-radius: var(--radius-md); border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; }
+        .btn-danger-icon:hover { background: #FEF2F2; color: var(--danger); border-color: #FECACA; }
 
         input, select, textarea { width: 100%; padding: 10px 12px; background-color: #FFFFFF; border: 1px solid var(--input-border); border-radius: var(--radius-md); font-size: 0.875rem; color: var(--text-main); font-family: var(--font-main); box-shadow: var(--shadow-sm); transition: border-color 0.2s, box-shadow 0.2s; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
         label { display: block; font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 6px; margin-top: 18px; }
 
         /* Suggestions Box for Autocomplete */
-        .suggestions-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            width: 100%;
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-lg);
-            z-index: 50;
-            max-height: 200px;
-            overflow-y: auto;
-            margin-top: 4px;
-        }
-        .suggestion-item {
-            padding: 8px 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.875rem;
-        }
-        .suggestion-item:hover {
-            background-color: var(--bg-input);
-        }
+        .suggestions-dropdown { position: absolute; top: 100%; left: 0; width: 100%; background: white; border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); z-index: 50; max-height: 200px; overflow-y: auto; margin-top: 4px; }
+        .suggestion-item { padding: 8px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.875rem; }
+        .suggestion-item:hover { background-color: var(--bg-input); }
 
         /* --- 4. LAYOUTS --- */
         .layout-container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
-        .auth-card { background: white; padding: 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); max-width: 400px; width: 100%; margin: 100px auto; text-align: center; border: 1px solid var(--border); }
+        .auth-card { background: white; padding: 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); max-width: 400px; width: 100%; margin: 100px auto; text-align: center; border: 1px solid var(--border); }
         
         .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
-        .user-menu { display: flex; align-items: center; gap: 12px; padding: 6px 12px; background: white; border: 1px solid var(--border); border-radius: 30px; cursor: pointer; transition: 0.2s; }
-        .user-menu:hover { background: var(--bg-input); }
-        .avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: #E5E7EB; }
+        .user-menu { display: flex; align-items: center; gap: 10px; padding: 6px 12px; background: transparent; border-radius: 30px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+        .user-menu:hover { background: var(--bg-surface); border-color: var(--border); box-shadow: var(--shadow-sm); }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: #E5E7EB; border: 1px solid var(--border); }
+        .nav-divider { width: 1px; height: 24px; background-color: var(--border); margin: 0 4px; }
         
         .section-title { font-size: 1.125rem; font-weight: 600; color: var(--text-main); margin: 32px 0 16px 0; display: flex; align-items: center; gap: 10px; }
         
-        .grid-container { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
-            gap: 16px; 
-        }
+        /* Smaller Grid Layout */
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
 
         .event-card { background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; position: relative; }
-        .event-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
-        .card-image-wrapper { width: 100%; padding-top: 56.25%; position: relative; background: #E5E7EB; }
+        .event-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--input-border); }
+        
+        .card-image-wrapper { width: 100%; padding-top: 56.25%; position: relative; background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%); border-bottom: 1px solid var(--bg-body); }
         .card-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
         
-        .card-content { padding: 12px; flex: 1; display: flex; flex-direction: column; }
-        .card-title { font-size: 0.95rem; font-weight: 600; margin: 0 0 4px 0; color: var(--text-main); line-height: 1.3; }
-        .card-meta { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 12px; }
-        .meta-item { display: flex; align-items: center; gap: 6px; }
+        /* Compact Card Content */
+        .card-content { padding: 14px; flex: 1; display: flex; flex-direction: column; }
+        .card-title { font-size: 0.95rem; font-weight: 600; margin: 0 0 8px 0; color: var(--text-main); line-height: 1.3; }
+        .card-meta { display: flex; flex-direction: column; gap: 6px; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 12px; }
+        .meta-item { display: flex; align-items: center; gap: 8px; }
         
-        .card-footer { margin-top: auto; display: flex; gap: 8px; border-top: 1px solid var(--bg-body); padding: 10px 12px; align-items: center; }
+        .card-footer { margin-top: auto; display: flex; gap: 8px; border-top: 1px solid var(--bg-body); padding: 12px 14px; align-items: center; background: #FAFAFA; }
 
-        .badge { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 8px; border-radius: 4px; font-weight: 700; }
+        .badge { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 8px; border-radius: 4px; font-weight: 700; display: inline-block; }
         .badge-draft { background: #FFF7ED; color: #C2410C; border: 1px solid #FFEDD5; }
         .badge-live { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; }
         .badge-hidden { background: #F3F4F6; color: #6B7280; border: 1px solid #E5E7EB; }
         .badge-res { background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; }
 
         /* Drawer */
-        .drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); z-index: 900; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .drawer-backdrop { position: fixed; inset: 0; background: rgba(17, 24, 39, 0.4); backdrop-filter: blur(2px); z-index: 900; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
         .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
         .drawer { position: fixed; top: 0; right: 0; height: 100vh; width: var(--drawer-width); max-width: 100%; background: white; z-index: 1000; box-shadow: -10px 0 25px rgba(0,0,0,0.1); transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
         .drawer.open { transform: translateX(0); }
         .drawer-header { padding: 20px 30px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: white; }
         .drawer-content { padding: 30px; overflow-y: auto; flex: 1; background: #fff; }
-        .drawer-footer { padding: 20px 30px; border-top: 1px solid var(--border); background: var(--bg-input); display: flex; gap: 15px; }
+        .drawer-footer { padding: 20px 30px; border-top: 1px solid var(--border); background: var(--bg-body); display: flex; gap: 15px; }
 
         /* Super Admin Styles */
         .sa-sidebar { width: 250px; background: white; border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; height: 100vh; position: fixed; left: 0; top: 0; }
-        .sa-main { margin-left: 250px; padding: 40px; background: var(--bg-input); min-height: 100vh; }
+        .sa-main { margin-left: 250px; padding: 40px; background: var(--bg-body); min-height: 100vh; }
         .sa-nav-item { padding: 10px; border-radius: 6px; cursor: pointer; margin-bottom: 5px; color: var(--text-secondary); font-weight: 500; }
         .sa-nav-item:hover, .sa-nav-item.active { background: var(--primary-light); color: var(--primary); }
         
@@ -167,10 +148,6 @@
         .ql-container { border-radius: 0 0 8px 8px; border: 1px solid var(--input-border) !important; font-family: var(--font-main) !important; font-size: 0.9rem; background: white; }
         #map_preview { height: 250px; width: 100%; border-radius: var(--radius-md); border: 1px solid var(--input-border); margin-top: 10px; z-index: 1; }
         
-        .leaflet-control-geosearch { position: absolute; top: 10px; left: 10px; z-index: 1000; width: 80%; }
-        .leaflet-control-geosearch form { background: white; border-radius: 8px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
-        .leaflet-control-geosearch input { height: 40px; padding: 0 10px; font-family: var(--font-main); border: none; }
-        
         .tag-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
         .user-tag { display: inline-flex; align-items: center; gap: 6px; background: white; border: 1px solid var(--input-border); padding: 4px 10px 4px 6px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
         .user-tag img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
@@ -182,7 +159,7 @@
 
         .skeleton { background: #E5E7EB; border-radius: 4px; animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
-        .card-skeleton { height: 250px; border-radius: var(--radius-lg); background: white; border: 1px solid var(--border); }
+        .card-skeleton { height: 220px; border-radius: var(--radius-lg); background: white; border: 1px solid var(--border); }
         
         #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 3000; display: flex; flex-direction: column; gap: 10px; }
         .toast { background: white; border-left: 4px solid var(--primary); padding: 16px 20px; border-radius: 4px; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 12px; min-width: 300px; font-size: 0.9rem; font-weight: 500; animation: slideIn 0.3s ease-out forwards; }
@@ -190,9 +167,18 @@
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
         /* Tabs Extension */
-        .tab-btn { background: none; border: none; font-size: 1rem; font-weight: 600; color: var(--text-secondary); padding: 10px 4px; border-bottom: 2px solid transparent; cursor: pointer; transition: 0.2s; }
-        .tab-btn:hover { color: var(--text-main); }
-        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab-btn { background: transparent; border: none; font-size: 0.95rem; font-weight: 600; color: var(--text-secondary); padding: 10px 16px; border-bottom: 2px solid transparent; cursor: pointer; transition: 0.2s; border-radius: 6px 6px 0 0; }
+        .tab-btn:hover { color: var(--text-main); background: #E5E7EB; border-bottom-color: var(--border); }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); background: transparent; }
+        .tab-btn.active:hover { background: transparent; }
+
+        /* Subtle input focus for co-facilitator */
+        .dashed-input { border: 1px dashed var(--input-border); background-color: var(--bg-body); transition: all 0.2s; }
+        .dashed-input:focus { border-color: var(--primary); border-style: solid; background-color: white; }
+
+        /* Custom Admin Button Focus */
+        .btn-admin { border: 1px solid var(--primary); color: var(--primary); background: var(--primary-light); padding: 8px 16px; font-weight: 600; border-radius: var(--radius-md); }
+        .btn-admin:hover { background: var(--primary); color: white; }
 
         @media (max-width: 768px) { .row { flex-direction: column; gap: 0; } .drawer { width: 100%; } .sa-sidebar { display:none; } .sa-main { margin-left:0; } }
     </style>
@@ -213,33 +199,39 @@
     </div>
 
     <div id="dashboard_view" class="layout-container hidden">
-        <div class="dashboard-header">
-            <div>
-                <h1 style="margin:0; font-size:1.5rem; letter-spacing:-0.02em;">Dashboard</h1>
-                <p style="margin:4px 0 0 0; color:var(--text-secondary); font-size:0.9rem;">Manage your events and resources.</p>
-            </div>
+        <div class="dashboard-header flex justify-between items-center mb-6">
             <div class="flex items-center gap-4">
-                <button id="btn_super_admin" class="hidden btn" style="color:var(--primary); font-weight:600; border:1px solid var(--primary); background:white;" onclick="openSuperAdmin()">
+                <img src="https://vlrbeemaxxdqiczdxomd.supabase.co/storage/v1/object/public/Assets/LOGO2%20UPWC@4x.png" alt="UPWC Logo" style="height: 88px; width: auto; object-fit: contain;">
+                <div>
+                    <h1 id="greeting_text" style="margin:0; font-size:1.4rem; letter-spacing:-0.02em; color:var(--text-main);">Welcome</h1>
+                    <p style="margin:2px 0 0 0; color:var(--text-secondary); font-size:0.85rem;">Manage your events and resources.</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button id="btn_super_admin" class="hidden btn btn-admin" onclick="openSuperAdmin()">
                     Admin Dashboard
                 </button>
                 
                 <div class="user-menu" onclick="openProfile()">
                     <img id="nav_avatar" class="avatar" src="">
-                    <span id="nav_name" style="font-size:0.875rem; font-weight:500;">User</span>
-                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
+                    <span id="nav_name" style="font-size:0.875rem; font-weight:600;">User</span>
+                    <svg class="icon icon-sm" style="color:var(--text-secondary);" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
-                <button class="btn btn-secondary" onclick="handleLogout()" title="Sign Out">
+                
+                <div class="nav-divider"></div>
+                
+                <button class="btn btn-ghost" style="padding: 8px;" onclick="handleLogout()" title="Sign Out">
                     <svg class="icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                 </button>
             </div>
         </div>
 
-        <div class="flex gap-4" style="border-bottom: 1px solid var(--border); margin-bottom: 24px;">
+        <div class="flex gap-2" style="border-bottom: 1px solid var(--border); margin-bottom: 24px;">
             <button id="tab_events" class="tab-btn active" onclick="switchTab('events')">Events</button>
             <button id="tab_resources" class="tab-btn" onclick="switchTab('resources')">Resources</button>
         </div>
 
-        <div class="flex justify-between items-center mb-4">
+        <div class="flex justify-between items-center mb-6">
              <div></div>
              <button id="main_action_btn" class="btn btn-primary" onclick="openDrawer()">
                 <svg class="icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
@@ -273,7 +265,7 @@
         <div id="resources_view_container" class="hidden">
             <div id="resources_list" class="grid-container"></div>
             <div id="resources_empty" class="hidden empty-state">
-                <svg class="empty-illustration" viewBox="0 0 24 24" fill="none" stroke="#E5E7EB" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                <svg class="empty-illustration" viewBox="0 0 24 24" fill="none" stroke="#E5E7EB" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477-4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                 <h3>No resources found</h3>
                 <p>Share knowledge with your community.</p>
                 <button class="btn btn-secondary" onclick="openResourceDrawer()" style="margin-top:10px;">Add Resource</button>
@@ -355,7 +347,7 @@
     <div id="event_drawer" class="drawer">
         <div class="drawer-header">
             <h2 id="form_title" style="margin:0; font-size:1.25rem;">Create Event</h2>
-            <button class="btn btn-ghost" onclick="confirmCloseDrawer()">
+            <button class="btn btn-ghost" style="padding: 8px;" onclick="confirmCloseDrawer()">
                 <svg class="icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
@@ -364,15 +356,15 @@
             <input type="hidden" id="edit_event_id">
             <label>Event Title</label><input type="text" id="title" placeholder="e.g. 3 Principles Workshop">
             <label>Cover Image</label>
-            <div id="image_upload_area" style="border:2px dashed var(--input-border); border-radius:var(--radius-md); padding:20px; text-align:center; background:white;">
+            <div id="image_upload_area" style="border:1px solid var(--border); border-radius:var(--radius-md); padding:20px; text-align:center; background:var(--bg-body);">
                 <input type="file" id="file_input" accept="image/*" onchange="handleFileSelect(this)" style="display:none">
                 <input type="hidden" id="image_url">
                 <div id="upload_placeholder">
                     <button class="btn btn-secondary" onclick="document.getElementById('file_input').click()">Choose Image</button>
-                    <p style="font-size:0.75rem; color:var(--text-tertiary); margin-top:5px;">Recommended: 16:9 ratio</p>
+                    <p style="font-size:0.75rem; color:var(--text-tertiary); margin-top:8px;">Recommended: 16:9 ratio</p>
                 </div>
                 <div id="cropper_wrapper" class="hidden">
-                    <div style="height: 300px; width: 100%; background: #333; margin-bottom: 10px;">
+                    <div style="height: 300px; width: 100%; background: #333; margin-bottom: 12px; border-radius: 4px; overflow: hidden;">
                         <img id="image_to_crop" style="max-width: 100%; display: block;">
                     </div>
                     <div class="flex gap-2 justify-between">
@@ -381,7 +373,7 @@
                     </div>
                 </div>
                 <div id="image_preview_container" class="hidden" style="position: relative;">
-                    <img id="form_image_preview" src="" style="width:100%; border-radius:var(--radius-sm); display:block;">
+                    <img id="form_image_preview" src="" style="width:100%; border-radius:var(--radius-sm); display:block; border: 1px solid var(--border);">
                     <button class="btn btn-danger-soft" style="position: absolute; top: 10px; right: 10px; padding: 6px;" onclick="removeImage()">
                         <svg class="icon icon-sm" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
@@ -412,14 +404,22 @@
                 </div>
                 <label>City</label><input type="text" id="city" style="text-transform: capitalize;">
                 
-                <label>Exact Location (Map)</label>
+                <label style="margin-top:24px;">Search Address</label>
                 <div style="position:relative;">
-                    <input type="text" id="gmaps_link" placeholder="Or paste a Google Maps link..." oninput="parseMapLink()" style="padding-left:34px;">
-                    <svg class="icon icon-sm" style="position:absolute; left:10px; top:11px; color:var(--text-tertiary);" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <input type="text" id="address_search" placeholder="Search for a place or address..." autocomplete="off" style="padding-left:36px;">
+                    <svg class="icon icon-sm" style="position:absolute; left:12px; top:13px; color:var(--text-tertiary);" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <div id="address_suggestions" class="suggestions-dropdown hidden"></div>
+                </div>
+
+                <div id="map_preview" style="margin-top:10px;"></div>
+                <p id="map_status" style="font-size:0.75rem; color:var(--text-secondary); margin-top:6px; text-align:right;">Search on map or click to pin</p>
+
+                <label style="margin-top:16px; color:var(--text-secondary); font-weight:500;">Or paste a Google Maps link</label>
+                <div style="position:relative;">
+                    <input type="text" id="gmaps_link" placeholder="https://goo.gl/maps/..." oninput="parseMapLink()" style="padding-left:36px; background:var(--bg-input);">
+                    <svg class="icon icon-sm" style="position:absolute; left:12px; top:13px; color:var(--text-tertiary);" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
                 </div>
                 
-                <div id="map_preview"></div>
-                <p id="map_status" style="font-size:0.75rem; color:var(--text-secondary); margin-top:5px; text-align:right;">Search on map or click to pin</p>
                 <input type="hidden" id="lat"><input type="hidden" id="lng">
             </div>
 
@@ -445,10 +445,18 @@
             <label>Format</label><select id="format"><option value="Workshops">Workshop</option><option value="Courses">Course</option><option value="Retreats">Retreat</option></select>
 
             <label>Facilitator Team</label>
-            <div style="background:white; padding:15px; border-radius:var(--radius-md); border:1px solid var(--input-border);">
-                <div class="flex items-center gap-2 mb-3"><img id="form_my_avatar" class="avatar" src=""><span id="form_my_name" style="font-size:0.9rem; font-weight:600;">Me</span><span class="badge" style="background:#E0E7FF; color:var(--primary);">Lead</span></div>
+            <div style="background:white; padding:16px; border-radius:var(--radius-md); border:1px solid var(--input-border);">
+                
+                <h4 style="margin:0 0 12px 0; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Lead Facilitator</h4>
+                <div class="flex items-center gap-3 mb-5">
+                    <img id="form_my_avatar" class="avatar" src="">
+                    <span id="form_my_name" style="font-size:0.9rem; font-weight:600;">Me</span>
+                    <span class="badge" style="background:#E0E7FF; color:var(--primary);">Lead</span>
+                </div>
+
+                <h4 style="margin:0 0 8px 0; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Co-Facilitators</h4>
                 <div style="position:relative;">
-                    <input type="text" id="co_facilitator_input" placeholder="+ Add co-facilitator (Enter to add custom)..." oninput="handleSearch(this.value)" onkeydown="checkEnter(event)" style="background:white;">
+                    <input type="text" id="co_facilitator_input" class="dashed-input" placeholder="+ Add co-facilitator (Enter to add custom)..." oninput="handleSearch(this.value)" onkeydown="checkEnter(event)">
                     <div id="suggestions_box" class="hidden" style="position:absolute; width:100%; background:white; border:1px solid var(--border); border-radius:6px; box-shadow:var(--shadow-lg); z-index:10; max-height:150px; overflow-y:auto;"></div>
                 </div>
                 <div id="co_facilitators_list" class="tag-container"></div>
@@ -467,7 +475,7 @@
     <div id="resource_drawer" class="drawer">
         <div class="drawer-header">
             <h2 id="res_form_title" style="margin:0; font-size:1.25rem;">Share Resource</h2>
-            <button class="btn btn-ghost" onclick="closeResourceDrawer()">
+            <button class="btn btn-ghost" style="padding: 8px;" onclick="closeResourceDrawer()">
                 <svg class="icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
@@ -477,16 +485,17 @@
             <label>Resource Title</label><input type="text" id="res_title" placeholder="e.g. The Power of Now">
             
             <label>Resource Cover Image</label>
-            <div id="res_image_upload_area" style="border:2px dashed var(--input-border); border-radius:var(--radius-md); padding:20px; text-align:center; background:white;">
+            <div id="res_image_upload_area" style="border:1px solid var(--border); border-radius:var(--radius-md); padding:20px; text-align:center; background:var(--bg-body);">
                 <input type="file" id="res_file_input" accept="image/*" onchange="handleResFileSelect(this)" style="display:none">
                 <input type="hidden" id="res_image_url">
                 
                 <div id="res_upload_placeholder">
                     <button class="btn btn-secondary" onclick="document.getElementById('res_file_input').click()">Choose Image</button>
+                    <p style="font-size:0.75rem; color:var(--text-tertiary); margin-top:8px;">Recommended: 16:9 ratio</p>
                 </div>
                 
                 <div id="res_cropper_wrapper" class="hidden">
-                    <div style="height: 300px; width: 100%; background: #333; margin-bottom: 10px;">
+                    <div style="height: 300px; width: 100%; background: #333; margin-bottom: 12px; border-radius: 4px; overflow: hidden;">
                         <img id="res_image_to_crop" style="max-width: 100%; display: block;">
                     </div>
                     <div class="flex gap-2 justify-between">
@@ -496,7 +505,7 @@
                 </div>
                 
                 <div id="res_image_preview_container" class="hidden" style="position: relative;">
-                    <img id="res_form_image_preview" src="" style="width:100%; border-radius:var(--radius-sm); display:block;">
+                    <img id="res_form_image_preview" src="" style="width:100%; border-radius:var(--radius-sm); display:block; border: 1px solid var(--border);">
                     <button class="btn btn-danger-soft" style="position: absolute; top: 10px; right: 10px; padding: 6px;" onclick="removeResImage()">
                         <svg class="icon icon-sm" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
@@ -544,6 +553,8 @@
         let currentUser = null, userProfile = null, allProfiles = [], coFacilitators = [];
         let adminAllUsers = [], adminAllEvents = [];
         let mapInstance = null, mapMarker = null;
+        let osmapProvider = null;
+        let addressSearchTimeout;
         
         // Image variables for Events
         let cropper = null, croppedBlob = null;
@@ -555,6 +566,15 @@
             placeholder: '',
             modules: { toolbar: [ ['bold', 'italic', 'underline', 'link'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['clean'] ] }
         });
+
+        function updateGreeting(name) {
+            const hour = new Date().getHours();
+            let greeting = 'Good evening';
+            if (hour < 12) greeting = 'Good morning';
+            else if (hour < 18) greeting = 'Good afternoon';
+            
+            document.getElementById('greeting_text').innerText = `${greeting}, ${name || 'User'}`;
+        }
 
         /* =========================================
            2. AUTHENTICATION
@@ -597,6 +617,7 @@
             if (!userProfile) return;
             document.getElementById('nav_name').innerText = userProfile.full_name || 'User';
             document.getElementById('nav_avatar').src = userProfile.avatar_url || `https://ui-avatars.com/api/?name=${userProfile.full_name}&background=random`;
+            updateGreeting(userProfile.full_name);
             if (userProfile.role === 'admin') document.getElementById('btn_super_admin').classList.remove('hidden');
         }
 
@@ -613,17 +634,17 @@
                 document.getElementById('events_view_container').classList.remove('hidden');
                 document.getElementById('resources_view_container').classList.add('hidden');
                 btn.innerHTML = `<svg class="icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg> Create New Event`;
-                btn.onclick = () => openDrawer(); // FIXED: Prevents passing MouseEvent to function
+                btn.onclick = () => openDrawer(); 
             } else {
                 document.getElementById('events_view_container').classList.add('hidden');
                 document.getElementById('resources_view_container').classList.remove('hidden');
                 btn.innerHTML = `<svg class="icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg> Add Resource`;
-                btn.onclick = () => openResourceDrawer(); // FIXED: Prevents passing MouseEvent to function
+                btn.onclick = () => openResourceDrawer(); 
             }
         }
 
         /* =========================================
-           4. EVENTS GRID (ORIGINAL)
+           4. EVENTS GRID
            ========================================= */
         async function loadUserEvents() {
             const { data: events } = await supabaseClient
@@ -657,21 +678,21 @@
                 card.className = 'event-card';
                 card.innerHTML = `
                     <div class="card-image-wrapper">
-                        <img class="card-image" src="${event.image_url || 'https://via.placeholder.com/600x400?text=No+Image'}" onerror="this.src='https://via.placeholder.com/600x400?text=Event'">
+                        ${event.image_url ? `<img class="card-image" src="${event.image_url}" onerror="this.style.display='none'">` : ''}
                     </div>
                     <div class="card-content">
                         <h3 class="card-title">${event.title}</h3>
                         <div class="card-meta">
-                            <div class="meta-item"><svg class="icon-sm" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>${start.toLocaleDateString()} at ${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
-                            <div class="meta-item"><svg class="icon-sm" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>${locString}</div>
+                            <div class="meta-item"><svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>${start.toLocaleDateString()} at ${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                            <div class="meta-item"><svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>${locString}</div>
                         </div>
-                        <div style="margin-top:auto; display:flex; gap:10px; align-items:center;">
+                        <div style="margin-top:8px;">
                             ${isDraft ? '<span class="badge badge-draft">Draft</span>' : '<span class="badge badge-live">Published</span>'}
                         </div>
                     </div>
                     <div class="card-footer">
-                        <button class="btn btn-secondary" style="flex:1; font-size:0.75rem;" onclick='openDrawer(${JSON.stringify(event)})'>Edit Details</button>
-                        <button class="btn-danger-icon" onclick="deleteEvent('${event.id}')" title="Remove">
+                        <button class="btn btn-secondary" style="flex:1; font-size:0.8rem; padding: 6px 12px;" onclick='openDrawer(${JSON.stringify(event).replace(/'/g, "&apos;")})'>Edit Details</button>
+                        <button class="btn-danger-icon" onclick="deleteEvent('${event.id}')" title="Remove Event">
                             <svg class="icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     </div>
@@ -685,7 +706,7 @@
         }
 
         /* =========================================
-           5. RESOURCES GRID (NEW)
+           5. RESOURCES GRID
            ========================================= */
         async function loadUserResources() {
             const { data: res } = await supabaseClient.from('resources').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
@@ -700,19 +721,21 @@
                 card.className = 'event-card';
                 card.innerHTML = `
                 <div class="card-image-wrapper">
-                    <img class="card-image" src="${r.image_url || 'https://via.placeholder.com/600x400?text=Resource'}" onerror="this.src='https://via.placeholder.com/600x400?text=Resource'">
+                    ${r.image_url ? `<img class="card-image" src="${r.image_url}" onerror="this.style.display='none'">` : ''}
                 </div>
                 <div class="card-content">
-                    <div style="margin-bottom:6px;"><span class="badge badge-res">${r.category}</span></div>
+                    <div style="margin-bottom:8px;"><span class="badge badge-res">${r.category}</span></div>
                     <h3 class="card-title">${r.title}</h3>
-                    <p style="font-size:0.8rem; color:var(--text-secondary); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${r.description || ''}</p>
+                    <p style="font-size:0.85rem; color:var(--text-secondary); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${r.description || ''}</p>
                 </div>
                 <div class="card-footer">
-                    <button class="btn btn-secondary btn-sm" style="flex:1" onclick='openResourceDrawer(${JSON.stringify(r)})'>Edit</button>
-                    <a href="${r.link}" target="_blank" class="btn btn-ghost btn-sm" title="Visit Link">
+                    <button class="btn btn-secondary btn-sm" style="flex:1; padding: 6px 12px; font-size: 0.8rem;" onclick='openResourceDrawer(${JSON.stringify(r).replace(/'/g, "&apos;")})'>Edit</button>
+                    
+                    <a href="${r.link}" target="_blank" class="btn btn-secondary btn-sm" title="Visit Link" style="padding: 6px 10px;">
                         <svg class="icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                     </a>
-                    <button class="btn-danger-icon" onclick="deleteResource('${r.id}')" title="Remove">
+                    
+                    <button class="btn-danger-icon" onclick="deleteResource('${r.id}')" title="Remove Resource">
                         <svg class="icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
                 </div>`;
@@ -722,7 +745,7 @@
 
 
         /* =========================================
-           6. EVENT DRAWER & FORM LOGIC (ORIGINAL)
+           6. EVENT DRAWER & FORM LOGIC
            ========================================= */
         function openDrawer(event = null) {
             document.getElementById('event_drawer').classList.add('open');
@@ -798,7 +821,7 @@
         }
 
         /* =========================================
-           7. RESOURCE DRAWER LOGIC (NEW)
+           7. RESOURCE DRAWER LOGIC
            ========================================= */
         function openResourceDrawer(res = null) {
             document.getElementById('resource_drawer').classList.add('open');
@@ -840,7 +863,7 @@
         }
 
 
-        // --- Super Admin Logic (ORIGINAL) ---
+        // --- Super Admin Logic ---
         function openSuperAdmin() {
             document.getElementById('dashboard_view').classList.add('hidden');
             document.getElementById('super_admin_view').classList.remove('hidden');
@@ -947,7 +970,7 @@
             }
 
             suggestionsBox.innerHTML = uniqueFacilitators.map(name => 
-                `<div class="suggestion-item" onclick="selectAdminFacilitator('${name}')">${name}</div>`
+                `<div class="suggestion-item" onclick="selectAdminFacilitator('${name.replace(/'/g, "\\'")}')">${name}</div>`
             ).join('');
             
             suggestionsBox.classList.remove('hidden');
@@ -984,7 +1007,7 @@
             loadAdminData();
         }
 
-        // --- Location & Map (ORIGINAL) ---
+        // --- Location & Map  ---
         function toggleLocationType() {
             const type = document.getElementById('location_type').value;
             const wrapper = document.getElementById('physical_location_wrapper');
@@ -999,24 +1022,62 @@
                 mapInstance = L.map('map_preview');
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapInstance);
                 
-                const provider = new GeoSearch.OpenStreetMapProvider();
-                const search = new GeoSearch.GeoSearchControl({
-                    provider: provider,
-                    style: 'bar',
-                    autoClose: true,
-                    showMarker: false,
-                });
-                mapInstance.addControl(search);
-                mapInstance.on('geosearch/showlocation', function(result) {
-                    setMarker(result.location.y, result.location.x);
-                });
-                
+                // Setup provider for our custom search input
+                osmapProvider = new GeoSearch.OpenStreetMapProvider();
+                setupCustomAddressSearch();
+
                 mapInstance.on('click', function(e) { setMarker(e.latlng.lat, e.latlng.lng); });
             }
             mapInstance.invalidateSize();
             if (lat && lng) { mapInstance.setView([lat, lng], 14); setMarker(lat, lng); } 
             else { mapInstance.setView([20, 0], 2); if (mapMarker) mapInstance.removeLayer(mapMarker); }
         }
+
+        function setupCustomAddressSearch() {
+            const input = document.getElementById('address_search');
+            input.addEventListener('input', (e) => {
+                clearTimeout(addressSearchTimeout);
+                const query = e.target.value;
+                const box = document.getElementById('address_suggestions');
+
+                if(query.length < 3) {
+                    box.classList.add('hidden');
+                    return;
+                }
+
+                addressSearchTimeout = setTimeout(async () => {
+                    if(!osmapProvider) return;
+                    const results = await osmapProvider.search({ query });
+                    if(results.length > 0) {
+                        box.innerHTML = results.map(r => 
+                            `<div class="suggestion-item" onclick="selectAddress(${r.y}, ${r.x}, '${r.label.replace(/'/g, "\\'")}')">
+                                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                                ${r.label}
+                            </div>`
+                        ).join('');
+                        box.classList.remove('hidden');
+                    } else {
+                        box.innerHTML = `<div class="suggestion-item" style="color: #9CA3AF;">No results found</div>`;
+                        box.classList.remove('hidden');
+                    }
+                }, 500);
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (input && !input.parentNode.contains(e.target)) {
+                    document.getElementById('address_suggestions').classList.add('hidden');
+                }
+            });
+        }
+
+        function selectAddress(lat, lng, label) {
+            document.getElementById('address_search').value = label;
+            document.getElementById('address_suggestions').classList.add('hidden');
+            setMarker(lat, lng);
+            mapInstance.setView([lat, lng], 14);
+        }
+
         function setMarker(lat, lng) {
             document.getElementById('lat').value = lat;
             document.getElementById('lng').value = lng;
@@ -1034,7 +1095,7 @@
             }
         }
 
-        // --- Image Cropping Events (ORIGINAL) ---
+        // --- Image Cropping Events ---
         function handleFileSelect(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -1044,7 +1105,8 @@
                     const img = document.getElementById('image_to_crop');
                     img.src = e.target.result;
                     if(cropper) cropper.destroy();
-                    cropper = new Cropper(img, { aspectRatio: 16/9, viewMode: 1, autoCropArea: 1 });
+                    // viewMode: 0 to allow zooming out with white background fill
+                    cropper = new Cropper(img, { aspectRatio: 16/9, viewMode: 0, autoCropArea: 1 });
                 };
                 reader.readAsDataURL(input.files[0]);
             }
@@ -1085,7 +1147,7 @@
             croppedBlob = null;
         }
 
-        // --- Image Cropping Resources (NEW) ---
+        // --- Image Cropping Resources ---
         function handleResFileSelect(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -1095,7 +1157,8 @@
                     const img = document.getElementById('res_image_to_crop');
                     img.src = e.target.result;
                     if(resCropper) resCropper.destroy();
-                    resCropper = new Cropper(img, { aspectRatio: 16/9, viewMode: 1, autoCropArea: 1 });
+                    // viewMode: 0 to allow zooming out with white background fill
+                    resCropper = new Cropper(img, { aspectRatio: 16/9, viewMode: 0, autoCropArea: 1 });
                 };
                 reader.readAsDataURL(input.files[0]);
             }
@@ -1136,7 +1199,7 @@
             resCroppedBlob = null;
         }
 
-        // --- Saving Events (ORIGINAL) ---
+        // --- Saving Events ---
         async function saveEvent(statusType) {
             const btn = document.getElementById(statusType === 'draft' ? 'draftBtn' : 'postBtn');
             const originalText = btn.innerText;
@@ -1199,7 +1262,7 @@
             else { showToast("Event removed", "success"); loadUserEvents(); }
         }
 
-        // --- Saving Resources (NEW) ---
+        // --- Saving Resources ---
         async function saveResource() {
             const btn = document.getElementById('resPostBtn');
             const originalText = btn.innerText;
@@ -1251,7 +1314,7 @@
             else { showToast("Resource deleted", "success"); loadUserResources(); }
         }
 
-        // --- Profile & Facilitators (ORIGINAL) ---
+        // --- Profile & Facilitators ---
         function openProfile() { 
             document.getElementById('profile_view').classList.add('open');
             if(userProfile) {
@@ -1288,7 +1351,7 @@
             if(!query) { box.classList.add('hidden'); return; }
             const matches = allProfiles.filter(p => p.full_name.toLowerCase().includes(query.toLowerCase()));
             box.innerHTML = matches.map(p => 
-                `<div style="padding:10px; cursor:pointer; display:flex; align-items:center; gap:8px;" onclick='addCoFacilitator(${JSON.stringify(p)})'>
+                `<div style="padding:10px; cursor:pointer; display:flex; align-items:center; gap:8px;" onclick='addCoFacilitator(${JSON.stringify(p).replace(/'/g, "&apos;")})'>
                     <img src="${p.avatar_url || 'https://via.placeholder.com/20'}" class="avatar" style="width:24px;height:24px;">${p.full_name}</div>`
             ).join('');
             box.classList.remove('hidden');
@@ -1330,7 +1393,7 @@
             "Asia": ["Afghanistan","Armenia","Azerbaijan","Bahrain","Bangladesh","Bhutan","Brunei","Cambodia","China","Cyprus","Georgia","India","Indonesia","Iran","Iraq","Israel","Japan","Jordan","Kazakhstan","Kuwait","Kyrgyzstan","Laos","Lebanon","Malaysia","Maldives","Mongolia","Myanmar","Nepal","North Korea","Oman","Pakistan","Palestine","Philippines","Qatar","Russia","Saudi Arabia","Singapore","South Korea","Sri Lanka","Syria","Taiwan","Tajikistan","Thailand","Timor-Leste","Turkey","Turkmenistan","United Arab Emirates","Uzbekistan","Vietnam","Yemen"],
             "Europe": ["Albania","Andorra","Austria","Belarus","Belgium","Bosnia and Herzegovina","Bulgaria","Croatia","Czech Republic","Denmark","Estonia","Finland","France","Germany","Greece","Hungary","Iceland","Ireland","Italy","Kosovo","Latvia","Liechtenstein","Lithuania","Luxembourg","Malta","Moldova","Monaco","Montenegro","Netherlands","North Macedonia","Norway","Poland","Portugal","Romania","Russia","San Marino","Serbia","Slovakia","Slovenia","Spain","Sweden","Switzerland","Ukraine","United Kingdom","Vatican City"],
             "North America": ["Antigua and Barbuda","Bahamas","Barbados","Belize","Canada","Costa Rica","Cuba","Dominica","Dominican Republic","El Salvador","Grenada","Guatemala","Haiti","Honduras","Jamaica","Mexico","Nicaragua","Panama","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines","Trinidad and Tobago","United States"],
-            "Oceania": ["Australia","Fiji","Kiribati","Marshall Islands","Micronesia","Nauru","New Zealand","Palau","Papua New Guinea","Samoa","Solomon Islands","Tonga","Tuvalu","Vanuatu"],
+            "Oceania": ["Australia","Fiji","Kiribati","Marshall Islands","Micronesia","Nauru","New Zealand","Palau","Papua Guinea","Samoa","Solomon Islands","Tonga","Tuvalu","Vanuatu"],
             "South America": ["Argentina","Bolivia","Brazil","Chile","Colombia","Ecuador","Guyana","Paraguay","Peru","Suriname","Uruguay","Venezuela"]
         };
 
